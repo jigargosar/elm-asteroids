@@ -13,13 +13,7 @@ main =
         , style "padding" "2rem"
         , style "box-sizing" "border-box"
         ]
-        [ Html.node "style"
-            []
-            [ text """
-                :root{height:100%;}
-                body{height:100%;}
-                """
-            ]
+        [ globalStyles
         , svg
             [ viewBox "0 0 500 500"
             , style "display" "block"
@@ -36,4 +30,14 @@ main =
                 [ Svg.circle [ S.r "100" ] []
                 ]
             ]
+        ]
+
+
+globalStyles =
+    Html.node "style"
+        []
+        [ text """
+                              :root{height:100%;}
+                              body{height:100%;}
+                              """
         ]
