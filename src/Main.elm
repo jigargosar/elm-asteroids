@@ -24,9 +24,9 @@ type alias Flags =
 
 
 type alias Model =
-    { x : Float
-    , y : Float
+    { p : ( Float, Float )
     , a : Float
+    , v : ( Float, Float )
     }
 
 
@@ -36,7 +36,12 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init () =
-    ( { x = 10, y = -50, a = turns 0.5 }, Cmd.none )
+    ( { p = ( 10, -50 )
+      , a = turns 0.5
+      , v = fromPolar ( 50, turns 0.5 )
+      }
+    , Cmd.none
+    )
 
 
 subscriptions : Model -> Sub Msg
@@ -45,30 +50,47 @@ subscriptions _ =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg m =
     case msg of
-        GotDelta d ->
+        GotDelta dm ->
             let
-                pt =
-                    ( model.x, model.y )
+                d =
+                    dm / 1000
 
-                speed =
-                    10 * (d / 1000)
-
-                angle =
-                    model.a
-
-                velocity =
-                    fromPolar ( speed, angle )
-
-                ( x, y ) =
-                    map2 add pt velocity
+                p =
+                    m.p
+                        |> shift (m.v |> vScale d)
             in
-            ( { model | x = x, y = y }, Cmd.none )
+            ( { m
+                | p = p
+                , v =
+                    m.v
+                        |> toPolar
+                        |> Tuple.mapFirst (mul 0.9999)
+                        |> fromPolar
+              }
+            , Cmd.none
+            )
+
+
+shift v p =
+    map2 add p v
+
+
+vScale n =
+    map (mul n)
 
 
 add =
     (+)
+
+
+mul =
+    (*)
+
+
+map f ( a, b ) =
+    ( f a, f b )
 
 
 map2 f ( a, b ) ( c, d ) =
@@ -99,7 +121,7 @@ view m =
             [ Svg.g
                 [ style "transform" "translate(50%, 50%)"
                 ]
-                [ viewXYA ship m.x m.y m.a
+                [ viewPA ship m.p m.a
                 , viewXYA asteroidLarge -170 -70 (turns -0.1)
                 , viewXYA asteroidSmall -100 70 (turns 0.1)
                 ]
@@ -117,6 +139,10 @@ asteroidLargeR =
 
 asteroidSmallR =
     30
+
+
+viewPA el ( x, y ) a =
+    viewXYA el x y a
 
 
 viewXYA imageEl x y a =
