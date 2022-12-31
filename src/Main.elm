@@ -37,7 +37,7 @@ main =
 
 
 shipR =
-    20
+    15
 
 
 asteroidLargeR =
@@ -140,19 +140,22 @@ ship =
         head =
             ( r * 1.5, 0 )
 
-        tail1 =
-            ( r * -1.2, -r )
+        tailTop =
+            ( r * -1.2, -r * 1.2 )
 
-        tail2 =
-            tail1 |> Tuple.mapSecond negate
+        tailBottom =
+            tailTop |> Tuple.mapSecond negate
 
-        innerTail =
+        tailMiddle =
             ( r * -0.5, 0 )
+
+        pts =
+            [ tailTop, head, tailBottom, tailMiddle ]
     in
     Svg.g []
         [ Svg.circle [ S.r (String.fromFloat r), stroke "green" ] []
         , Svg.polygon
-            [ S.points (pointsAsString [ tail1, head, tail2, innerTail ]) ]
+            [ S.points (pointsAsString pts) ]
             []
         ]
 
