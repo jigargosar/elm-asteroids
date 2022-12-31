@@ -3,7 +3,7 @@ module Main exposing (main)
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Random exposing (Generator)
-import Svg exposing (svg)
+import Svg exposing (Svg, svg)
 import Svg.Attributes as S exposing (fill, stroke, viewBox)
 
 
@@ -49,7 +49,7 @@ asteroidSmallR =
 
 
 viewXYA imageEl x y a =
-    Svg.g [ transform [ translate x y, rotate a ] ] [ imageEl ]
+    Svg.g [ transformXYA x y a ] [ imageEl ]
 
 
 asteroidLarge =
@@ -63,7 +63,7 @@ asteroidLarge =
                 |> Tuple.first
     in
     Svg.polygon
-        [ S.points (pointsAsString pts) ]
+        [ attrPoints pts ]
         []
 
 
@@ -78,7 +78,7 @@ asteroidSmall =
                 |> Tuple.first
     in
     Svg.polygon
-        [ S.points (pointsAsString pts) ]
+        [ attrPoints pts ]
         []
 
 
@@ -88,16 +88,16 @@ randomNgonPoints deviation sides radius =
             splitTurn sides
 
         randomRadii =
-            deviateFloatBy deviation radius
+            deviateBy deviation radius
     in
     Random.list sides randomRadii
         |> Random.map (List.map2 fromAngleRadius angles)
 
 
-deviateFloatBy : Float -> Float -> Generator Float
-deviateFloatBy d f =
+deviateBy : Float -> Float -> Generator Float
+deviateBy d n =
     Random.float -d d
-        |> Random.map (\rd -> rd * f + f)
+        |> Random.map (\rd -> rd * n + n)
 
 
 splitTurn count =
@@ -112,18 +112,7 @@ fromAngleRadius a r =
     fromPolar ( r, a )
 
 
-translate x y =
-    "translate(" ++ String.fromFloat x ++ "px," ++ String.fromFloat y ++ "px)"
-
-
-rotate a =
-    "rotate(" ++ String.fromFloat a ++ "rad)"
-
-
-transform =
-    String.join " " >> style "transform"
-
-
+ship : Svg msg
 ship =
     let
         r =
@@ -146,15 +135,31 @@ ship =
     in
     Svg.g []
         [ Svg.circle [ S.r (String.fromFloat r), stroke "green" ] []
-        , Svg.polygon
-            [ S.points (pointsAsString pts) ]
-            []
+        , Svg.polygon [ attrPoints pts ] []
         ]
 
 
-pointsAsString =
+attrPoints : List ( Float, Float ) -> Svg.Attribute msg
+attrPoints =
     List.map (\( a, b ) -> String.fromFloat a ++ "," ++ String.fromFloat b)
         >> String.join " "
+        >> S.points
+
+
+transformXYA x y a =
+    transform [ translate x y, rotate a ]
+
+
+transform =
+    String.join " " >> style "transform"
+
+
+translate x y =
+    "translate(" ++ String.fromFloat x ++ "px," ++ String.fromFloat y ++ "px)"
+
+
+rotate a =
+    "rotate(" ++ String.fromFloat a ++ "rad)"
 
 
 globalStyles =
