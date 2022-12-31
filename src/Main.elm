@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Events
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Random exposing (Generator)
@@ -25,28 +26,53 @@ type alias Flags =
 type alias Model =
     { x : Float
     , y : Float
+    , a : Float
     }
 
 
 type Msg
-    = Msg
+    = GotDelta Float
 
 
 init : () -> ( Model, Cmd Msg )
 init () =
-    ( { x = 10, y = -50 }, Cmd.none )
+    ( { x = 10, y = -50, a = turns 0.5 }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Browser.Events.onAnimationFrameDelta GotDelta
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg ->
-            ( model, Cmd.none )
+        GotDelta d ->
+            let
+                pt =
+                    ( model.x, model.y )
+
+                speed =
+                    10 * (d / 1000)
+
+                angle =
+                    model.a
+
+                velocity =
+                    fromPolar ( speed, angle )
+
+                ( x, y ) =
+                    map2 add pt velocity
+            in
+            ( { model | x = x, y = y }, Cmd.none )
+
+
+add =
+    (+)
+
+
+map2 f ( a, b ) ( c, d ) =
+    ( f a c, f b d )
 
 
 view : Model -> Html.Html msg
@@ -73,7 +99,7 @@ view m =
             [ Svg.g
                 [ style "transform" "translate(50%, 50%)"
                 ]
-                [ viewXYA ship m.x m.y (turns -0.1)
+                [ viewXYA ship m.x m.y m.a
                 , viewXYA asteroidLarge -170 -70 (turns -0.1)
                 , viewXYA asteroidSmall -100 70 (turns 0.1)
                 ]
