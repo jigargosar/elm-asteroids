@@ -177,7 +177,7 @@ globalStyles =
             body{height:100%;}
             polygon, circle{
                 stroke-width:1.5;
-                stroke-dasharray:1 3;
+                stroke-dasharray:1 2;
                 stroke-linecap:round;
             }
             """
