@@ -100,27 +100,16 @@ deviateFloatBy d f =
         |> Random.map (\rd -> rd * f + f)
 
 
-splitTurn s =
-    List.range 1 s
-        |> List.map
-            (toFloat
-                >> (\n ->
-                        turns (n / toFloat s)
-                   )
-            )
+splitTurn count =
+    let
+        toAngle i =
+            turns (toFloat i / toFloat count)
+    in
+    List.map toAngle (List.range 1 count)
 
 
 fromAngleRadius a r =
     fromPolar ( r, a )
-
-
-
---ngonPoints s r =
---    let
---        fromAngle a =
---            fromPolar ( r, a )
---    in
---    List.map fromAngle (splitTurn s)
 
 
 translate x y =
