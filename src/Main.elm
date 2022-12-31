@@ -28,10 +28,9 @@ main =
             [ Svg.g
                 [ style "transform" "translate(50%, 50%)"
                 ]
-                [ Svg.circle [ S.r "100" ] []
-                , viewShip 10 -50 (turns -0.1)
-                , asteroidLarge
-                , asteroidSmall
+                [ viewXYA ship 10 -50 (turns -0.1)
+                , viewXYA asteroidLarge -170 -70 (turns -0.1)
+                , viewXYA asteroidSmall -100 70 (turns 0.1)
                 ]
             ]
         ]
@@ -47,6 +46,10 @@ asteroidLargeR =
 
 asteroidSmallR =
     30
+
+
+viewXYA imageEl x y a =
+    Svg.g [ transform [ translate x y, rotate a ] ] [ imageEl ]
 
 
 asteroidLarge =
@@ -79,16 +82,6 @@ asteroidSmall =
         []
 
 
-splitTurn s =
-    List.range 1 s
-        |> List.map
-            (toFloat
-                >> (\n ->
-                        turns (n / toFloat s)
-                   )
-            )
-
-
 randomFloatWithUniformDeviation : Float -> Float -> Generator Float
 randomFloatWithUniformDeviation d f =
     Random.float -d d
@@ -104,6 +97,16 @@ randomNgonPoints d s r =
         |> Random.map (\radii -> List.map2 fromRadiusAngle radii angles)
 
 
+splitTurn s =
+    List.range 1 s
+        |> List.map
+            (toFloat
+                >> (\n ->
+                        turns (n / toFloat s)
+                   )
+            )
+
+
 fromRadiusAngle r a =
     fromPolar ( r, a )
 
@@ -115,10 +118,6 @@ fromRadiusAngle r a =
 --            fromPolar ( r, a )
 --    in
 --    List.map fromAngle (splitTurn s)
-
-
-viewShip x y a =
-    Svg.g [ transform [ translate x y, rotate a ] ] [ ship ]
 
 
 translate x y =
