@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
+import Random exposing (Generator)
 import Svg exposing (svg)
 import Svg.Attributes as S exposing (fill, stroke, viewBox)
 
@@ -29,19 +30,49 @@ main =
                 ]
                 [ Svg.circle [ S.r "100" ] []
                 , viewShip 10 -50 (turns -0.1)
-                , viewAsteroid
+                , asteroidLarge
+                , asteroidSmall
                 ]
             ]
         ]
 
 
-viewAsteroid =
+shipR =
+    20
+
+
+asteroidLargeR =
+    60
+
+
+asteroidSmallR =
+    30
+
+
+asteroidLarge =
     let
         r =
-            50
+            asteroidLargeR
 
         pts =
-            ngonPoints 8 r
+            Random.step (randomNgonPoints 0.1 25 r)
+                (Random.initialSeed 0)
+                |> Tuple.first
+    in
+    Svg.polygon
+        [ S.points (pointsAsString pts) ]
+        []
+
+
+asteroidSmall =
+    let
+        r =
+            asteroidSmallR
+
+        pts =
+            Random.step (randomNgonPoints 0.1 25 r)
+                (Random.initialSeed 0)
+                |> Tuple.first
     in
     Svg.polygon
         [ S.points (pointsAsString pts) ]
@@ -58,12 +89,32 @@ splitTurn s =
             )
 
 
-ngonPoints s r =
+randomFloatWithUniformDeviation : Float -> Float -> Generator Float
+randomFloatWithUniformDeviation d f =
+    Random.float -d d
+        |> Random.map (\rd -> rd * f + f)
+
+
+randomNgonPoints d s r =
     let
-        fromAngle a =
-            fromPolar ( r, a )
+        angles =
+            splitTurn s
     in
-    List.map fromAngle (splitTurn s)
+    Random.list s (randomFloatWithUniformDeviation d r)
+        |> Random.map (\radii -> List.map2 fromRadiusAngle radii angles)
+
+
+fromRadiusAngle r a =
+    fromPolar ( r, a )
+
+
+
+--ngonPoints s r =
+--    let
+--        fromAngle a =
+--            fromPolar ( r, a )
+--    in
+--    List.map fromAngle (splitTurn s)
 
 
 viewShip x y a =
@@ -80,10 +131,6 @@ rotate a =
 
 transform =
     String.join " " >> style "transform"
-
-
-shipR =
-    20
 
 
 ship =
