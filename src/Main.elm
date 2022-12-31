@@ -34,10 +34,14 @@ main =
         ]
 
 
+shipR =
+    20
+
+
 ship =
     let
         r =
-            20
+            shipR
 
         head =
             ( r * 1.5, 0 )
