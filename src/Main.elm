@@ -22,8 +22,10 @@ type alias Flags =
     ()
 
 
-type Model
-    = Model
+type alias Model =
+    { x : Float
+    , y : Float
+    }
 
 
 type Msg
@@ -32,7 +34,7 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init () =
-    ( Model, Cmd.none )
+    ( { x = 10, y = -50 }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -48,7 +50,7 @@ update msg model =
 
 
 view : Model -> Html.Html msg
-view _ =
+view m =
     div
         [ style "display" "grid"
         , style "height" "100%"
@@ -71,7 +73,7 @@ view _ =
             [ Svg.g
                 [ style "transform" "translate(50%, 50%)"
                 ]
-                [ viewXYA ship 10 -50 (turns -0.1)
+                [ viewXYA ship m.x m.y (turns -0.1)
                 , viewXYA asteroidLarge -170 -70 (turns -0.1)
                 , viewXYA asteroidSmall -100 70 (turns 0.1)
                 ]
