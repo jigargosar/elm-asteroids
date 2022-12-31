@@ -23,6 +23,8 @@ main =
             , style "max-height" "100%"
             , style "place-self" "center"
             , stroke "white"
+            , S.strokeLinecap "round"
+            , S.strokeDasharray "40 1"
             , fill "transparent"
             ]
             [ Svg.g
@@ -135,8 +137,13 @@ ship =
     in
     Svg.g []
         [ Svg.circle [ S.r (String.fromFloat r), stroke "green" ] []
+            |> hide
         , Svg.polygon [ attrPoints pts ] []
         ]
+
+
+hide =
+    always (text "")
 
 
 attrPoints : List ( Float, Float ) -> Svg.Attribute msg
@@ -166,7 +173,12 @@ globalStyles =
     Html.node "style"
         []
         [ text """
-                              :root{height:100%;}
-                              body{height:100%;}
-                              """
+            :root{height:100%;}
+            body{height:100%;}
+            polygon, circle{
+                stroke-width:1.5;
+                stroke-dasharray:1 3;
+                stroke-linecap:round;
+            }
+            """
         ]
