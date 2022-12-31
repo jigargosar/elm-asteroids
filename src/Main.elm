@@ -28,9 +28,40 @@ main =
                 [ style "transform" "translate(50%, 50%)"
                 ]
                 [ Svg.circle [ S.r "100" ] []
+                , ship
                 ]
             ]
         ]
+
+
+ship =
+    let
+        r =
+            20
+
+        head =
+            ( r * 1.5, 0 )
+
+        tail1 =
+            ( r * -1.2, -r )
+
+        tail2 =
+            tail1 |> Tuple.mapSecond negate
+
+        innerTail =
+            ( r * -0.5, 0 )
+    in
+    Svg.g []
+        [ Svg.circle [ S.r (String.fromFloat r), stroke "green" ] []
+        , Svg.polygon
+            [ S.points (points [ tail1, head, tail2, innerTail ]) ]
+            []
+        ]
+
+
+points =
+    List.map (\( a, b ) -> String.fromFloat a ++ "," ++ String.fromFloat b)
+        >> String.join " "
 
 
 globalStyles =
