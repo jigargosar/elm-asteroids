@@ -82,19 +82,22 @@ asteroidSmall =
         []
 
 
-randomFloatWithUniformDeviation : Float -> Float -> Generator Float
-randomFloatWithUniformDeviation d f =
-    Random.float -d d
-        |> Random.map (\rd -> rd * f + f)
-
-
-randomNgonPoints d s r =
+randomNgonPoints deviation sides radius =
     let
         angles =
-            splitTurn s
+            splitTurn sides
+
+        randomRadii =
+            deviateFloatBy deviation radius
     in
-    Random.list s (randomFloatWithUniformDeviation d r)
-        |> Random.map (\radii -> List.map2 fromRadiusAngle radii angles)
+    Random.list sides randomRadii
+        |> Random.map (List.map2 fromAngleRadius angles)
+
+
+deviateFloatBy : Float -> Float -> Generator Float
+deviateFloatBy d f =
+    Random.float -d d
+        |> Random.map (\rd -> rd * f + f)
 
 
 splitTurn s =
@@ -107,7 +110,7 @@ splitTurn s =
             )
 
 
-fromRadiusAngle r a =
+fromAngleRadius a r =
     fromPolar ( r, a )
 
 
