@@ -29,9 +29,41 @@ main =
                 ]
                 [ Svg.circle [ S.r "100" ] []
                 , viewShip 10 -50 (turns -0.1)
+                , viewAsteroid
                 ]
             ]
         ]
+
+
+viewAsteroid =
+    let
+        r =
+            50
+
+        pts =
+            ngonPoints 8 r
+    in
+    Svg.polygon
+        [ S.points (pointsAsString pts) ]
+        []
+
+
+splitTurn s =
+    List.range 1 s
+        |> List.map
+            (toFloat
+                >> (\n ->
+                        turns (n / toFloat s)
+                   )
+            )
+
+
+ngonPoints s r =
+    let
+        fromAngle a =
+            fromPolar ( r, a )
+    in
+    List.map fromAngle (splitTurn s)
 
 
 viewShip x y a =
@@ -74,12 +106,12 @@ ship =
     Svg.g []
         [ Svg.circle [ S.r (String.fromFloat r), stroke "green" ] []
         , Svg.polygon
-            [ S.points (points [ tail1, head, tail2, innerTail ]) ]
+            [ S.points (pointsAsString [ tail1, head, tail2, innerTail ]) ]
             []
         ]
 
 
-points =
+pointsAsString =
     List.map (\( a, b ) -> String.fromFloat a ++ "," ++ String.fromFloat b)
         >> String.join " "
 
