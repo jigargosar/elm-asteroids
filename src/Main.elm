@@ -28,10 +28,22 @@ main =
                 [ style "transform" "translate(50%, 50%)"
                 ]
                 [ Svg.circle [ S.r "100" ] []
-                , ship
+                , viewShip -0.25
                 ]
             ]
         ]
+
+
+viewShip a =
+    Svg.g [ transform [ rotate a ] ] [ ship ]
+
+
+rotate a =
+    "rotate(" ++ String.fromFloat a ++ "turn)"
+
+
+transform =
+    String.join " " >> style "transform"
 
 
 shipR =
