@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Browser
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Random exposing (Generator)
@@ -7,7 +8,47 @@ import Svg exposing (Svg, svg)
 import Svg.Attributes as S exposing (fill, stroke, viewBox)
 
 
+main : Program Flags Model Msg
 main =
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
+
+
+type alias Flags =
+    ()
+
+
+type Model
+    = Model
+
+
+type Msg
+    = Msg
+
+
+init : () -> ( Model, Cmd Msg )
+init () =
+    ( Model, Cmd.none )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Msg ->
+            ( model, Cmd.none )
+
+
+view : Model -> Html.Html msg
+view _ =
     div
         [ style "display" "grid"
         , style "height" "100%"
