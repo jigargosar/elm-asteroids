@@ -29,6 +29,7 @@ type alias Model =
     , a : Float
     , v : ( Float, Float )
     , rocks : List Rock
+    , bullets : List Bullet
     , left : Bool
     , right : Bool
     , forward : Bool
@@ -37,6 +38,13 @@ type alias Model =
 
 
 type alias Rock =
+    { p : ( Float, Float )
+    , a : Float
+    , v : ( Float, Float )
+    }
+
+
+type alias Bullet =
     { p : ( Float, Float )
     , a : Float
     , v : ( Float, Float )
@@ -54,6 +62,7 @@ init () =
       , a = turns 0.5
       , v = fromPolar ( 50, turns 0.5 )
       , rocks = Random.step (Random.list 4 randomRock) (Random.initialSeed 2) |> Tuple.first
+      , bullets = []
       , left = False
       , right = False
       , forward = False
