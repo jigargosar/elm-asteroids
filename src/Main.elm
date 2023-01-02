@@ -28,9 +28,17 @@ type alias Model =
     { p : ( Float, Float )
     , a : Float
     , v : ( Float, Float )
+    , rocks : List Rock
     , left : Bool
     , right : Bool
     , forward : Bool
+    }
+
+
+type alias Rock =
+    { p : ( Float, Float )
+    , a : Float
+    , v : ( Float, Float )
     }
 
 
@@ -45,12 +53,36 @@ init () =
     ( { p = ( 10, -50 )
       , a = turns 0.5
       , v = fromPolar ( 50, turns 0.5 )
+      , rocks = Random.step (Random.list 5 randomRock) (Random.initialSeed 2) |> Tuple.first
       , left = False
       , right = False
       , forward = False
       }
     , Cmd.none
     )
+
+
+randomRock : Generator Rock
+randomRock =
+    Random.map3 Rock
+        (randomPointInRoom ( 500, 500 ))
+        randomAngle
+        randomRockVelocity
+
+
+randomRockVelocity =
+    randomAngle
+        |> Random.map (\a -> fromPolar ( 10, a ))
+
+
+randomAngle =
+    Random.float 0 (turns 1)
+
+
+randomPointInRoom ( w, h ) =
+    Random.pair
+        (Random.float (-w / 2) (w / 2))
+        (Random.float (-h / 2) (h / 2))
 
 
 subscriptions : Model -> Sub Msg
@@ -202,10 +234,13 @@ view m =
             [ Svg.g
                 [ style "transform" "translate(50%, 50%)"
                 ]
-                [ viewPA ship m.p m.a
-                , viewXYA asteroidLarge -170 -70 (turns -0.1)
-                , viewXYA asteroidSmall -100 70 (turns 0.1)
-                ]
+                ([ viewPA ship m.p m.a
+
+                 --, viewXYA asteroidLarge -170 -70 (turns -0.1)
+                 --, viewXYA asteroidSmall -100 70 (turns 0.1)
+                 ]
+                    ++ List.map (\rock -> viewPA asteroidLarge rock.p rock.a) m.rocks
+                )
             ]
         ]
 
