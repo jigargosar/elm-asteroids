@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
+import Json.Decode as JD
 import Random exposing (Generator)
 import Svg exposing (Svg, svg)
 import Svg.Attributes as S exposing (fill, stroke, viewBox)
@@ -32,6 +33,8 @@ type alias Model =
 
 type Msg
     = GotDelta Float
+    | GotKeyDown String
+    | GotKeyUp String
 
 
 init : () -> ( Model, Cmd Msg )
@@ -46,12 +49,22 @@ init () =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Browser.Events.onAnimationFrameDelta GotDelta
+    [ Browser.Events.onAnimationFrameDelta GotDelta
+    , Browser.Events.onKeyDown (JD.field "key" JD.string |> JD.map GotKeyDown)
+    , Browser.Events.onKeyUp (JD.field "key" JD.string |> JD.map GotKeyUp)
+    ]
+        |> Sub.batch
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg m =
     case msg of
+        GotKeyDown _ ->
+            ( m, Cmd.none )
+
+        GotKeyUp _ ->
+            ( m, Cmd.none )
+
         GotDelta dm ->
             let
                 d =
@@ -68,8 +81,10 @@ update msg m =
             , Cmd.none
             )
 
+
 vMapMag f =
     toPolar >> Tuple.mapFirst f >> fromPolar
+
 
 vAdd v p =
     map2 add p v
