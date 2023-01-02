@@ -100,13 +100,16 @@ update msg m =
 step : Float -> Model -> Model
 step d m =
     { m
-        | p = m.p |> vAdd (m.v |> vScale d)
+        | p =
+            m.p
+                |> vAdd (m.v |> vScale d)
+                |> warpIn ( 500, 500 )
         , v =
             (if m.forward then
                 vAdd m.v (fromPolar ( d * 50, m.a ))
 
              else
-                m.v |> vMapMag (mul 0.999)
+                m.v |> vMapMag (mul 0.9999)
             )
                 |> vMapMag (atMost 100)
         , a =
@@ -123,6 +126,26 @@ step d m =
             in
             m.a + d * angularDirection * turns 0.5
     }
+
+
+warpIn ( w, h ) ( x, y ) =
+    ( if x < -w / 2 then
+        w / 2
+
+      else if x > w / 2 then
+        -w / 2
+
+      else
+        x
+    , if y < -h / 2 then
+        h / 2
+
+      else if y > h / 2 then
+        -h / 2
+
+      else
+        y
+    )
 
 
 atMost =
