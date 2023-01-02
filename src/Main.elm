@@ -93,41 +93,36 @@ update msg m =
             let
                 d =
                     dm / 1000
-
-                p =
-                    m.p
-                        |> vAdd (m.v |> vScale d)
             in
-            ( { m
-                | p = p
-                , v =
-                    (if m.forward then
-                        let
-                            acc =
-                                fromPolar ( d * 50, m.a )
-                        in
-                        vAdd m.v acc
+            ( step d m, Cmd.none )
 
-                     else
-                        m.v |> vMapMag (mul 0.999)
-                    )
-                        |> vMapMag (atMost 100)
-                , a =
-                    let
-                        rot =
-                            if m.left && not m.right then
-                                -1
 
-                            else if not m.left && m.right then
-                                1
+step : Float -> Model -> Model
+step d m =
+    { m
+        | p = m.p |> vAdd (m.v |> vScale d)
+        , v =
+            (if m.forward then
+                vAdd m.v (fromPolar ( d * 50, m.a ))
 
-                            else
-                                0
-                    in
-                    m.a + d * rot * turns 0.5
-              }
-            , Cmd.none
+             else
+                m.v |> vMapMag (mul 0.999)
             )
+                |> vMapMag (atMost 100)
+        , a =
+            let
+                angularDirection =
+                    if m.left && not m.right then
+                        -1
+
+                    else if not m.left && m.right then
+                        1
+
+                    else
+                        0
+            in
+            m.a + d * angularDirection * turns 0.5
+    }
 
 
 atMost =
