@@ -29,7 +29,7 @@ type alias Model =
     , a : Float
     , v : ( Float, Float )
     , rocks : List Rock
-    , bullets : List Bullet
+    , bullets : ( Float, List Bullet )
     , left : Bool
     , right : Bool
     , forward : Bool
@@ -64,7 +64,7 @@ init () =
       , rocks =
             Random.step (Random.list 4 randomRock) (Random.initialSeed 2)
                 |> Tuple.first
-      , bullets = []
+      , bullets = ( 0, [] )
       , left = False
       , right = False
       , forward = False
@@ -168,14 +168,17 @@ step d m =
         , rocks = List.map (stepRock d) m.rocks
         , bullets =
             let
+                ( elapsed, bullets ) =
+                    m.bullets
+
                 updatedBullets =
-                    List.filterMap (stepBullet d) m.bullets
+                    List.filterMap (stepBullet d) bullets
             in
-            if m.trigger then
-                { p = m.p, a = m.a, v = fromPolar ( 500, m.a ) } :: updatedBullets
+            if m.trigger && elapsed > 0.5 then
+                ( 0, { p = m.p, a = m.a, v = fromPolar ( 500, m.a ) } :: updatedBullets )
 
             else
-                updatedBullets
+                ( elapsed + d, updatedBullets )
     }
 
 
@@ -281,8 +284,12 @@ view m =
                  --, viewXYA asteroidLarge -170 -70 (turns -0.1)
                  --, viewXYA asteroidSmall -100 70 (turns 0.1)
                  ]
-                    ++ List.map (\rock -> viewPA asteroidLarge rock.p rock.a) m.rocks
-                    ++ List.map (\bullet -> viewPA bulletShape bullet.p bullet.a) m.bullets
+                    ++ List.map
+                        (\rock -> viewPA asteroidLarge rock.p rock.a)
+                        m.rocks
+                    ++ List.map
+                        (\bullet -> viewPA bulletShape bullet.p bullet.a)
+                        (Tuple.second m.bullets)
                 )
             ]
         ]
