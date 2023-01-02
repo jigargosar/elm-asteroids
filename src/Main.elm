@@ -30,11 +30,16 @@ type alias Model =
     , v : ( Float, Float )
     , rocks : List Rock
     , bullets : ( Float, List Bullet )
+    , explosions : List Explosion
     , left : Bool
     , right : Bool
     , forward : Bool
     , trigger : Bool
     }
+
+
+type Explosion
+    = Explosion
 
 
 type alias Rock =
@@ -65,6 +70,7 @@ init () =
             Random.step (Random.list 4 randomRock) (Random.initialSeed 2)
                 |> Tuple.first
       , bullets = ( 0, [] )
+      , explosions = []
       , left = False
       , right = False
       , forward = False
@@ -184,6 +190,28 @@ step d m =
                 , updatedBullets
                 )
     }
+        |> collision
+
+
+collision : Model -> Model
+collision m =
+    let
+        rockHit : Rock -> Bool
+        rockHit rock =
+            List.any (rockBulletCollision rock) (Tuple.second m.bullets)
+
+        ( rocksHit, rocksSafe ) =
+            List.partition rockHit m.rocks
+    in
+    { m | rocks = rocksSafe, explosions = [ Explosion ] }
+
+
+rockBulletCollision rock bullet =
+    distanceSquared rock.p bullet.p < ((asteroidLargeR * 0.9) ^ 2)
+
+
+distanceSquared ( a, b ) ( c, d ) =
+    ((a - c) ^ 2) + ((b - d) ^ 2)
 
 
 friction d coefficient =
