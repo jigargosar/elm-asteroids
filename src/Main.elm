@@ -178,6 +178,7 @@ step d m =
     }
 
 
+stepBullet : Float -> Bullet -> Maybe Bullet
 stepBullet d m =
     if withinBounds ( 500, 500 ) m.p then
         Just { m | p = m.p |> vAdd (m.v |> vScale d) }
