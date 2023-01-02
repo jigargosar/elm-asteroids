@@ -61,7 +61,9 @@ init () =
     ( { p = ( 10, -50 )
       , a = turns 0.5
       , v = fromPolar ( 50, turns 0.5 )
-      , rocks = Random.step (Random.list 4 randomRock) (Random.initialSeed 2) |> Tuple.first
+      , rocks =
+            Random.step (Random.list 4 randomRock) (Random.initialSeed 2)
+                |> Tuple.first
       , bullets = []
       , left = False
       , right = False
@@ -142,15 +144,14 @@ step d m =
                 |> vAdd (m.v |> vScale d)
                 |> warpIn ( 500, 500 )
         , v =
-            (if m.forward then
-                vAdd m.v (fromPolar ( d * 50, m.a ))
+            m.v
+                |> friction d 0.1
+                |> (if m.forward then
+                        vAdd (fromPolar ( d * 100, m.a ))
 
-             else
-                m.v
-            )
-                -- friction
-                -- https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585/
-                |> vScale (exp (-d / 10))
+                    else
+                        identity
+                   )
         , a =
             let
                 angularDirection =
@@ -176,6 +177,11 @@ step d m =
             else
                 updatedBullets
     }
+
+
+friction d coefficient =
+    --https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585
+    vScale (exp (-d * coefficient))
 
 
 stepBullet : Float -> Bullet -> Maybe Bullet
