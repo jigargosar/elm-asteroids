@@ -28,6 +28,9 @@ type alias Model =
     { p : ( Float, Float )
     , a : Float
     , v : ( Float, Float )
+    , left : Bool
+    , right : Bool
+    , forward : Bool
     }
 
 
@@ -42,6 +45,9 @@ init () =
     ( { p = ( 10, -50 )
       , a = turns 0.5
       , v = fromPolar ( 50, turns 0.5 )
+      , left = False
+      , right = False
+      , forward = False
       }
     , Cmd.none
     )
@@ -59,8 +65,26 @@ subscriptions _ =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg m =
     case msg of
+        GotKeyDown "ArrowLeft" ->
+            ( { m | left = True }, Cmd.none )
+
+        GotKeyDown "ArrowRight" ->
+            ( { m | right = True }, Cmd.none )
+
+        GotKeyDown "ArrowUp" ->
+            ( { m | forward = True }, Cmd.none )
+
         GotKeyDown _ ->
             ( m, Cmd.none )
+
+        GotKeyUp "ArrowLeft" ->
+            ( { m | left = False }, Cmd.none )
+
+        GotKeyUp "ArrowRight" ->
+            ( { m | right = False }, Cmd.none )
+
+        GotKeyUp "ArrowUp" ->
+            ( { m | forward = False }, Cmd.none )
 
         GotKeyUp _ ->
             ( m, Cmd.none )
@@ -76,10 +100,38 @@ update msg m =
             in
             ( { m
                 | p = p
-                , v = m.v |> vMapMag (mul 0.999)
+                , v =
+                    (if m.forward then
+                        let
+                            acc =
+                                fromPolar ( d * 50, m.a )
+                        in
+                        vAdd m.v acc
+
+                     else
+                        m.v |> vMapMag (mul 0.999)
+                    )
+                        |> vMapMag (atMost 100)
+                , a =
+                    let
+                        rot =
+                            if m.left && not m.right then
+                                -1
+
+                            else if not m.left && m.right then
+                                1
+
+                            else
+                                0
+                    in
+                    m.a + d * rot * turns 0.5
               }
             , Cmd.none
             )
+
+
+atMost =
+    min
 
 
 vMapMag f =
