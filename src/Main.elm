@@ -97,6 +97,10 @@ update msg m =
             ( step d m, Cmd.none )
 
 
+exp n =
+    e ^ n
+
+
 step : Float -> Model -> Model
 step d m =
     { m
@@ -109,9 +113,13 @@ step d m =
                 vAdd m.v (fromPolar ( d * 50, m.a ))
 
              else
-                m.v |> vMapMag (mul 0.9999)
+                m.v
             )
-                |> vMapMag (atMost 100)
+                -- friction
+                -- https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585/
+                |> vScale (exp (-d / 10))
+
+        --|> vMapMag (atMost 100)
         , a =
             let
                 angularDirection =
