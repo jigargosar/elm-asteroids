@@ -59,21 +59,19 @@ update msg m =
 
                 p =
                     m.p
-                        |> shift (m.v |> vScale d)
+                        |> vAdd (m.v |> vScale d)
             in
             ( { m
                 | p = p
-                , v =
-                    m.v
-                        |> toPolar
-                        |> Tuple.mapFirst (mul 0.9999)
-                        |> fromPolar
+                , v = m.v |> vMapMag (mul 0.999)
               }
             , Cmd.none
             )
 
+vMapMag f =
+    toPolar >> Tuple.mapFirst f >> fromPolar
 
-shift v p =
+vAdd v p =
     map2 add p v
 
 
