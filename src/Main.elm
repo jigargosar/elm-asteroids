@@ -168,10 +168,10 @@ step d m =
         , bullets =
             let
                 updatedBullets =
-                    List.map (stepBullet d) m.bullets
+                    List.filterMap (stepBullet d) m.bullets
             in
             if m.trigger then
-                { p = m.p, a = m.a, v = fromPolar ( 100, m.a ) } :: updatedBullets
+                { p = m.p, a = m.a, v = fromPolar ( 500, m.a ) } :: updatedBullets
 
             else
                 updatedBullets
@@ -179,7 +179,15 @@ step d m =
 
 
 stepBullet d m =
-    { m | p = m.p |> vAdd (m.v |> vScale d) }
+    if withinBounds ( 500, 500 ) m.p then
+        Just { m | p = m.p |> vAdd (m.v |> vScale d) }
+
+    else
+        Nothing
+
+
+withinBounds ( w, h ) ( x, y ) =
+    x > -w / 2 && x < w / 2 && y > -h / 2 && y < h / 2
 
 
 stepRock : Float -> Rock -> Rock
