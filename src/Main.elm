@@ -53,7 +53,7 @@ init () =
     ( { p = ( 10, -50 )
       , a = turns 0.5
       , v = fromPolar ( 50, turns 0.5 )
-      , rocks = Random.step (Random.list 5 randomRock) (Random.initialSeed 2) |> Tuple.first
+      , rocks = Random.step (Random.list 4 randomRock) (Random.initialSeed 2) |> Tuple.first
       , left = False
       , right = False
       , forward = False
@@ -163,6 +163,18 @@ step d m =
                         0
             in
             m.a + d * angularDirection * turns 0.5
+        , rocks = List.map (stepRock d) m.rocks
+    }
+
+
+stepRock : Float -> Rock -> Rock
+stepRock d m =
+    { m
+        | p =
+            m.p
+                |> vAdd (m.v |> vScale d)
+                |> warpIn ( 500, 500 )
+        , a = m.a + d * turns 0.1
     }
 
 
