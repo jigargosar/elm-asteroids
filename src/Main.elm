@@ -145,7 +145,7 @@ step d m =
                 |> warpIn ( 500, 500 )
         , v =
             m.v
-                |> friction d 0.1
+                |> friction d 0.05
                 |> (if m.forward then
                         vAdd (fromPolar ( d * 100, m.a ))
 
