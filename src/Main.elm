@@ -175,7 +175,7 @@ step d m =
                     List.filterMap (stepBullet d) bullets
             in
             if m.trigger && elapsed > 0.5 then
-                ( 0, { p = m.p, a = m.a, v = fromPolar ( 500, m.a ) } :: updatedBullets )
+                ( 0, { p = m.p, a = m.a, v = fromPolar ( 300, m.a ) } :: updatedBullets )
 
             else
                 ( elapsed + d, updatedBullets )
