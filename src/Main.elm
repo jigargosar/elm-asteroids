@@ -116,7 +116,7 @@ update msg m =
         GotKey isDown "ArrowUp" ->
             ( { m | forward = isDown }, Cmd.none )
 
-        GotKey isDown "Space" ->
+        GotKey isDown " " ->
             ( { m | trigger = isDown }, Cmd.none )
 
         GotKey _ _ ->
@@ -165,7 +165,21 @@ step d m =
             in
             m.a + d * angularDirection * turns 0.5
         , rocks = List.map (stepRock d) m.rocks
+        , bullets =
+            let
+                updatedBullets =
+                    List.map (stepBullet d) m.bullets
+            in
+            if m.trigger then
+                { p = m.p, a = m.a, v = fromPolar ( 100, m.a ) } :: updatedBullets
+
+            else
+                updatedBullets
     }
+
+
+stepBullet d m =
+    { m | p = m.p |> vAdd (m.v |> vScale d) }
 
 
 stepRock : Float -> Rock -> Rock
@@ -253,9 +267,14 @@ view m =
                  --, viewXYA asteroidSmall -100 70 (turns 0.1)
                  ]
                     ++ List.map (\rock -> viewPA asteroidLarge rock.p rock.a) m.rocks
+                    ++ List.map (\bullet -> viewPA bulletShape bullet.p bullet.a) m.bullets
                 )
             ]
         ]
+
+
+bulletShape =
+    Svg.circle [ S.r "3", fill "white", stroke "none" ] []
 
 
 shipR =
