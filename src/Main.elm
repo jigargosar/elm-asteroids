@@ -32,6 +32,7 @@ type alias Model =
     , left : Bool
     , right : Bool
     , forward : Bool
+    , trigger : Bool
     }
 
 
@@ -44,8 +45,7 @@ type alias Rock =
 
 type Msg
     = GotDelta Float
-    | GotKeyDown String
-    | GotKeyUp String
+    | GotKey Bool String
 
 
 init : () -> ( Model, Cmd Msg )
@@ -57,6 +57,7 @@ init () =
       , left = False
       , right = False
       , forward = False
+      , trigger = False
       }
     , Cmd.none
     )
@@ -88,8 +89,8 @@ randomPointInRoom ( w, h ) =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     [ Browser.Events.onAnimationFrameDelta GotDelta
-    , Browser.Events.onKeyDown (JD.field "key" JD.string |> JD.map GotKeyDown)
-    , Browser.Events.onKeyUp (JD.field "key" JD.string |> JD.map GotKeyUp)
+    , Browser.Events.onKeyDown (JD.field "key" JD.string |> JD.map (GotKey True))
+    , Browser.Events.onKeyUp (JD.field "key" JD.string |> JD.map (GotKey False))
     ]
         |> Sub.batch
 
@@ -97,28 +98,19 @@ subscriptions _ =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg m =
     case msg of
-        GotKeyDown "ArrowLeft" ->
-            ( { m | left = True }, Cmd.none )
+        GotKey isDown "ArrowLeft" ->
+            ( { m | left = isDown }, Cmd.none )
 
-        GotKeyDown "ArrowRight" ->
-            ( { m | right = True }, Cmd.none )
+        GotKey isDown "ArrowRight" ->
+            ( { m | right = isDown }, Cmd.none )
 
-        GotKeyDown "ArrowUp" ->
-            ( { m | forward = True }, Cmd.none )
+        GotKey isDown "ArrowUp" ->
+            ( { m | forward = isDown }, Cmd.none )
 
-        GotKeyDown _ ->
-            ( m, Cmd.none )
+        GotKey isDown "Space" ->
+            ( { m | trigger = isDown }, Cmd.none )
 
-        GotKeyUp "ArrowLeft" ->
-            ( { m | left = False }, Cmd.none )
-
-        GotKeyUp "ArrowRight" ->
-            ( { m | right = False }, Cmd.none )
-
-        GotKeyUp "ArrowUp" ->
-            ( { m | forward = False }, Cmd.none )
-
-        GotKeyUp _ ->
+        GotKey _ _ ->
             ( m, Cmd.none )
 
         GotDelta dm ->
@@ -290,6 +282,10 @@ asteroidLarge =
     Svg.polygon
         [ attrPoints pts ]
         []
+
+
+
+--noinspection ElmUnusedSymbol
 
 
 asteroidSmall =
