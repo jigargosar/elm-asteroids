@@ -118,8 +118,6 @@ step d m =
                 -- friction
                 -- https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585/
                 |> vScale (exp (-d / 10))
-
-        --|> vMapMag (atMost 100)
         , a =
             let
                 angularDirection =
@@ -154,14 +152,6 @@ warpIn ( w, h ) ( x, y ) =
       else
         y
     )
-
-
-atMost =
-    min
-
-
-vMapMag f =
-    toPolar >> Tuple.mapFirst f >> fromPolar
 
 
 vAdd v p =
