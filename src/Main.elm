@@ -203,14 +203,67 @@ step d m =
 collision : Model -> Model
 collision m =
     let
-        rockHit : Rock -> Bool
-        rockHit rock =
-            List.any (rockBulletCollision rock) (Tuple.second m.bullets)
-
-        ( rocksHit, rocksSafe ) =
-            List.partition rockHit m.rocks
+        ( safeBullets, ( rocksHit, rocksSafe ) ) =
+            bulletsRocksCollision (Tuple.second m.bullets) m.rocks
     in
-    { m | rocks = rocksSafe, explosions = [ Explosion ] }
+    { m
+        | rocks = rocksSafe
+        , explosions = [ Explosion ]
+        , bullets = Tuple.mapSecond (always safeBullets) m.bullets
+    }
+
+
+bulletsRocksCollision : List Bullet -> List Rock -> ( List Bullet, ( List Rock, List Rock ) )
+bulletsRocksCollision initialBullets initialRocks =
+    List.foldl
+        (\rock ( bullets, ( dead, safe ) ) ->
+            case removeFirst (rockBulletCollision rock) bullets of
+                Just ( _, safeBullets ) ->
+                    ( safeBullets, ( enq rock dead, safe ) )
+
+                Nothing ->
+                    ( bullets, ( dead, enq rock safe ) )
+        )
+        ( initialBullets, ( emptyQ, emptyQ ) )
+        initialRocks
+        |> Tuple.mapSecond (map qToList)
+
+
+removeFirst : (a -> Bool) -> List a -> Maybe ( a, List a )
+removeFirst pred list =
+    removeFirstHelp pred list emptyQ
+
+
+removeFirstHelp : (a -> Bool) -> List a -> Q a -> Maybe ( a, List a )
+removeFirstHelp pred pending done =
+    case pending of
+        [] ->
+            Nothing
+
+        h :: t ->
+            if pred h then
+                Just ( h, qToList done ++ t )
+
+            else
+                removeFirstHelp pred t (enq h done)
+
+
+type Q a
+    = Q (List a)
+
+
+emptyQ =
+    Q []
+
+
+enq : a -> Q a -> Q a
+enq a (Q list) =
+    Q (a :: list)
+
+
+qToList : Q a -> List a
+qToList (Q list) =
+    List.reverse list
 
 
 rockBulletCollision : Rock -> Bullet -> Bool
