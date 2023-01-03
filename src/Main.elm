@@ -46,7 +46,13 @@ type alias Rock =
     { p : ( Float, Float )
     , a : Float
     , v : ( Float, Float )
+    , t : RockType
     }
+
+
+type RockType
+    = RockSmall
+    | RockLarge
 
 
 type alias Bullet =
@@ -82,10 +88,11 @@ init () =
 
 randomRock : Generator Rock
 randomRock =
-    Random.map3 Rock
+    Random.map4 Rock
         (randomPointInRoom ( 500, 500 ))
         randomAngle
         randomRockVelocity
+        (Random.constant RockLarge)
 
 
 randomRockVelocity =
@@ -206,8 +213,19 @@ collision m =
     { m | rocks = rocksSafe, explosions = [ Explosion ] }
 
 
+rockBulletCollision : Rock -> Bullet -> Bool
 rockBulletCollision rock bullet =
-    distanceSquared rock.p bullet.p < ((asteroidLargeR * 0.9) ^ 2)
+    distanceSquared rock.p bullet.p < (rockCollisionRadius rock ^ 2)
+
+
+rockCollisionRadius : Rock -> Float
+rockCollisionRadius rock =
+    case rock.t of
+        RockSmall ->
+            asteroidSmallR * 0.9
+
+        RockLarge ->
+            asteroidLargeR * 0.9
 
 
 distanceSquared ( a, b ) ( c, d ) =
