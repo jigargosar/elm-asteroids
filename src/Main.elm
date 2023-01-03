@@ -394,11 +394,7 @@ view m =
             [ Svg.g
                 [ style "transform" "translate(50%, 50%)"
                 ]
-                ([ viewPA ship m.p m.a
-
-                 --, viewXYA asteroidLarge -170 -70 (turns -0.1)
-                 --, viewXYA asteroidSmall -100 70 (turns 0.1)
-                 ]
+                ([ viewPA ship m.p m.a ]
                     ++ List.map viewRock m.rocks
                     ++ List.map
                         (\bullet -> viewPA bulletShape bullet.p bullet.a)
