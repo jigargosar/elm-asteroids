@@ -205,9 +205,21 @@ collision m =
     let
         ( safeBullets, ( rocksHit, rocksSafe ) ) =
             bulletsRocksCollision (Tuple.second m.bullets) m.rocks
+
+        shatteredRocks =
+            List.concatMap
+                (\rock ->
+                    case rock.t of
+                        RockSmall ->
+                            []
+
+                        RockLarge ->
+                            [ { rock | t = RockSmall }, { rock | t = RockSmall } ]
+                )
+                rocksHit
     in
     { m
-        | rocks = rocksSafe
+        | rocks = rocksSafe ++ shatteredRocks
         , explosions = [ Explosion ]
         , bullets = Tuple.mapSecond (always safeBullets) m.bullets
     }
@@ -387,15 +399,27 @@ view m =
                  --, viewXYA asteroidLarge -170 -70 (turns -0.1)
                  --, viewXYA asteroidSmall -100 70 (turns 0.1)
                  ]
-                    ++ List.map
-                        (\rock -> viewPA asteroidLarge rock.p rock.a)
-                        m.rocks
+                    ++ List.map viewRock m.rocks
                     ++ List.map
                         (\bullet -> viewPA bulletShape bullet.p bullet.a)
                         (Tuple.second m.bullets)
                 )
             ]
         ]
+
+
+viewRock : Rock -> Svg msg
+viewRock rock =
+    viewPA
+        (case rock.t of
+            RockSmall ->
+                asteroidSmall
+
+            RockLarge ->
+                asteroidLarge
+        )
+        rock.p
+        rock.a
 
 
 bulletShape =
