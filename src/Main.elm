@@ -5,7 +5,8 @@ import Browser.Events
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Json.Decode as JD
-import Random exposing (Generator)
+import Random exposing (Generator, Seed)
+import Random.Extra
 import Svg exposing (Svg, svg)
 import Svg.Attributes as S exposing (fill, stroke, viewBox)
 
@@ -35,6 +36,7 @@ type alias Model =
     , right : Bool
     , forward : Bool
     , trigger : Bool
+    , seed : Seed
     }
 
 
@@ -69,18 +71,21 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init () =
+    let
+        ( rocks, seed ) =
+            Random.step (Random.list 4 randomRock) (Random.initialSeed 2)
+    in
     ( { p = ( 10, -50 )
       , a = turns 0.5
       , v = fromPolar ( 50, turns 0.5 )
-      , rocks =
-            Random.step (Random.list 4 randomRock) (Random.initialSeed 2)
-                |> Tuple.first
+      , rocks = rocks
       , bullets = ( 0, [] )
       , explosions = []
       , left = False
       , right = False
       , forward = False
       , trigger = False
+      , seed = seed
       }
     , Cmd.none
     )
@@ -200,29 +205,66 @@ step d m =
         |> collision
 
 
+roomWidth =
+    500
+
+
+roomLeft =
+    -roomWidth / 2
+
+
 collision : Model -> Model
 collision m =
     let
         ( safeBullets, ( rocksHit, rocksSafe ) ) =
             bulletsRocksCollision (Tuple.second m.bullets) m.rocks
 
-        shatteredRocks =
+        ( shatteredRocks, seed ) =
             List.concatMap
                 (\rock ->
                     case rock.t of
                         RockSmall ->
-                            []
+                            if List.length rocksSafe < 6 then
+                                [ { rock
+                                    | t = RockLarge
+                                    , p =
+                                        Tuple.mapFirst
+                                            (always (roomLeft - (asteroidLargeR * 1.1)))
+                                            rock.p
+                                  }
+                                ]
+
+                            else
+                                []
 
                         RockLarge ->
                             [ { rock | t = RockSmall }, { rock | t = RockSmall } ]
                 )
                 rocksHit
+                |> List.map randomizeRockVelocity
+                |> Random.Extra.combine
+                |> randomStepWithSeed m.seed
     in
     { m
         | rocks = rocksSafe ++ shatteredRocks
         , explosions = [ Explosion ]
         , bullets = Tuple.mapSecond (always safeBullets) m.bullets
+        , seed = seed
     }
+
+
+randomStepWithSeed seed gen =
+    Random.step gen seed
+
+
+randomizeRockVelocity : Rock -> Generator Rock
+randomizeRockVelocity rock =
+    randomAngle
+        |> Random.map (\a -> { rock | v = vMapAngle (always a) rock.v })
+
+
+vMapAngle f =
+    toPolar >> Tuple.mapSecond f >> fromPolar
 
 
 bulletsRocksCollision : List Bullet -> List Rock -> ( List Bullet, ( List Rock, List Rock ) )
