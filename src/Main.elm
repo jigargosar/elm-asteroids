@@ -534,7 +534,7 @@ view m =
         ]
         [ globalStyles
         , svg
-            [ attrViewBox roomSize
+            [ attrViewBox (roomSize |> vScale 1)
             , style "display" "block"
             , style "background-color" "black"
             , style "max-width" "100%"
@@ -545,13 +545,24 @@ view m =
             , S.strokeDasharray "40 1"
             , fill "transparent"
             ]
-            ([ viewPA ship m.p m.a ]
+            ([ roomRect, viewPA ship m.p m.a ]
                 ++ List.map viewRock m.rocks
                 ++ List.map
                     (\bullet -> viewPA bulletShape bullet.p bullet.a)
                     (Tuple.second m.bullets)
             )
         ]
+
+
+roomRect =
+    let
+        ( x, y ) =
+            roomHalfSize |> map (negate >> String.fromFloat)
+
+        ( w, h ) =
+            roomSize |> map String.fromFloat
+    in
+    Svg.rect [ S.x x, S.y y, S.width w, S.height h ] []
 
 
 attrViewBox size =
