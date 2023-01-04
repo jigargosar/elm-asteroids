@@ -53,7 +53,7 @@ type alias Rock =
 
 
 rockSpeed =
-    10
+    30
 
 
 type RockType
@@ -408,9 +408,13 @@ stepRock d rock =
         | p =
             rock.p
                 |> vAdd (rock.v |> vScale d)
-                |> warpWithMargin (rockRadius rock) roomSize
+                |> warpWithMargin (rockWarpMargin rock) roomSize
         , a = rock.a + d * turns 0.1
     }
+
+
+rockWarpMargin rock =
+    rockRadius rock * 2.2
 
 
 warpWithMargin m sz p =
