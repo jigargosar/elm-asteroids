@@ -370,9 +370,9 @@ friction d coefficient =
 
 
 stepBullet : Float -> Bullet -> Maybe Bullet
-stepBullet d m =
-    if withinBounds ( 500, 500 ) m.p then
-        Just { m | p = m.p |> vAdd (m.v |> vScale d) }
+stepBullet d bullet =
+    if withinBounds ( 500, 500 ) bullet.p then
+        Just { bullet | p = bullet.p |> vAdd (bullet.v |> vScale d) }
 
     else
         Nothing
@@ -383,13 +383,13 @@ withinBounds ( w, h ) ( x, y ) =
 
 
 stepRock : Float -> Rock -> Rock
-stepRock d m =
-    { m
+stepRock d rock =
+    { rock
         | p =
-            m.p
-                |> vAdd (m.v |> vScale d)
-                |> warp ( 500, 500 )
-        , a = m.a + d * turns 0.1
+            rock.p
+                |> vAdd (rock.v |> vScale d)
+                |> warpWithMargin (rockRadius rock) roomSize
+        , a = rock.a + d * turns 0.1
     }
 
 
