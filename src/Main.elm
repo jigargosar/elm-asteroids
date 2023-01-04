@@ -545,7 +545,7 @@ view m =
             , S.strokeDasharray "40 1"
             , fill "transparent"
             ]
-            ([ roomDebugBoundary
+            ([ rect roomSize []
              , viewPA ship m.p m.a
              ]
                 ++ List.map viewRock m.rocks
@@ -556,15 +556,15 @@ view m =
         ]
 
 
-roomDebugBoundary =
+rect sz attrs =
     let
         ( x, y ) =
-            roomHalfSize |> map (negate >> String.fromFloat)
+            sz |> map (mul -0.5 >> String.fromFloat)
 
         ( w, h ) =
-            roomSize |> map String.fromFloat
+            sz |> map String.fromFloat
     in
-    Svg.rect [ S.x x, S.y y, S.width w, S.height h ] []
+    Svg.rect (S.x x :: S.y y :: S.width w :: S.height h :: attrs) []
 
 
 attrViewBox size =
