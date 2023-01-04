@@ -218,7 +218,7 @@ step d m =
         | p =
             m.p
                 |> vAdd (m.v |> vScale d)
-                |> warpInDimension ( 500, 500 )
+                |> warpInDimension roomSize
         , v =
             m.v
                 |> friction d 0.05
@@ -454,7 +454,7 @@ friction d coefficient =
 
 stepBullet : Float -> Bullet -> Maybe Bullet
 stepBullet d bullet =
-    if withinBounds ( 500, 500 ) bullet.p then
+    if withinBounds roomSize bullet.p then
         Just { bullet | p = bullet.p |> vAdd (bullet.v |> vScale d) }
 
     else
@@ -534,7 +534,7 @@ view m =
         ]
         [ globalStyles
         , svg
-            [ viewBox "0 0 500 500"
+            [ attrViewBox roomSize
             , style "display" "block"
             , style "background-color" "black"
             , style "max-width" "100%"
@@ -545,17 +545,21 @@ view m =
             , S.strokeDasharray "40 1"
             , fill "transparent"
             ]
-            [ Svg.g
-                [ style "transform" "translate(50%, 50%)"
-                ]
-                ([ viewPA ship m.p m.a ]
-                    ++ List.map viewRock m.rocks
-                    ++ List.map
-                        (\bullet -> viewPA bulletShape bullet.p bullet.a)
-                        (Tuple.second m.bullets)
-                )
-            ]
+            ([ viewPA ship m.p m.a ]
+                ++ List.map viewRock m.rocks
+                ++ List.map
+                    (\bullet -> viewPA bulletShape bullet.p bullet.a)
+                    (Tuple.second m.bullets)
+            )
         ]
+
+
+attrViewBox size =
+    let
+        ( w, h ) =
+            size
+    in
+    viewBox (String.join " " (List.map String.fromFloat [ -w / 2, -h / 2, w, h ]))
 
 
 viewRock : Rock -> Svg msg
