@@ -160,7 +160,7 @@ step d m =
         | p =
             m.p
                 |> vAdd (m.v |> vScale d)
-                |> warpIn ( 500, 500 )
+                |> warp ( 500, 500 )
         , v =
             m.v
                 |> friction d 0.05
@@ -209,8 +209,28 @@ roomWidth =
     500
 
 
-roomLeft =
-    -roomWidth / 2
+roomHeight =
+    500
+
+
+roomSize =
+    ( roomWidth, roomHeight )
+
+
+roomHalfSize =
+    map (mul 0.5) roomSize
+
+
+roomInset =
+    let
+        ( hw, hh ) =
+            roomHalfSize
+    in
+    { top = -hh
+    , right = hw
+    , bottom = hh
+    , left = -hw
+    }
 
 
 collision : Model -> Model
@@ -229,7 +249,7 @@ collision m =
                                     | t = RockLarge
                                     , p =
                                         Tuple.mapFirst
-                                            (always (roomLeft - (asteroidLargeR * 1.1)))
+                                            (always (roomInset.left - (rockLargeRadius * 1.1)))
                                             rock.p
                                   }
                                 ]
@@ -327,12 +347,17 @@ rockBulletCollision rock bullet =
 
 rockCollisionRadius : Rock -> Float
 rockCollisionRadius rock =
+    rockRadius rock * 0.9
+
+
+rockRadius : Rock -> Float
+rockRadius rock =
     case rock.t of
         RockSmall ->
-            asteroidSmallR * 0.9
+            rockSmallRadius
 
         RockLarge ->
-            asteroidLargeR * 0.9
+            rockLargeRadius
 
 
 distanceSquared ( a, b ) ( c, d ) =
@@ -363,12 +388,16 @@ stepRock d m =
         | p =
             m.p
                 |> vAdd (m.v |> vScale d)
-                |> warpIn ( 500, 500 )
+                |> warp ( 500, 500 )
         , a = m.a + d * turns 0.1
     }
 
 
-warpIn ( w, h ) ( x, y ) =
+warpWithMargin m sz p =
+    warp (map (add m) sz) p
+
+
+warp ( w, h ) ( x, y ) =
     ( if x < -w / 2 then
         w / 2
 
@@ -468,11 +497,11 @@ shipR =
     15
 
 
-asteroidLargeR =
+rockLargeRadius =
     60
 
 
-asteroidSmallR =
+rockSmallRadius =
     30
 
 
@@ -487,7 +516,7 @@ viewXYA imageEl x y a =
 asteroidLarge =
     let
         r =
-            asteroidLargeR
+            rockLargeRadius
 
         pts =
             Random.step (randomNgonPoints 0.1 25 r)
@@ -506,7 +535,7 @@ asteroidLarge =
 asteroidSmall =
     let
         r =
-            asteroidSmallR
+            rockSmallRadius
 
         pts =
             Random.step (randomNgonPoints 0.1 25 r)
