@@ -500,10 +500,10 @@ viewRock rock =
     viewPA
         (case rock.t of
             RockSmall ->
-                asteroidSmall
+                rockSmallSvg
 
             RockLarge ->
-                asteroidLarge
+                rockLargeSvg
         )
         rock.p
         rock.a
@@ -533,7 +533,7 @@ viewXYA imageEl x y a =
     Svg.g [ transformXYA x y a ] [ imageEl ]
 
 
-asteroidLarge =
+rockLargeSvg =
     let
         r =
             rockLargeRadius
@@ -552,7 +552,7 @@ asteroidLarge =
 --noinspection ElmUnusedSymbol
 
 
-asteroidSmall =
+rockSmallSvg =
     let
         r =
             rockSmallRadius
