@@ -69,9 +69,24 @@ placeRockOutSideRoom rock =
             rock.p
 
         nx =
-            roomInset.left - rockWarpMargin rock
+            roomInset.left - rockVisualWidth rock
     in
     { rock | p = ( nx, y ) }
+
+
+rockVisualSize rock =
+    let
+        r =
+            rockRadius rock
+
+        d =
+            r * 2.1
+    in
+    ( d, d )
+
+
+rockVisualWidth =
+    rockVisualSize >> Tuple.first
 
 
 type RockType
@@ -207,7 +222,7 @@ step d m =
         | p =
             m.p
                 |> vAdd (m.v |> vScale d)
-                |> warp ( 500, 500 )
+                |> warpInDimension ( 500, 500 )
         , v =
             m.v
                 |> friction d 0.05
@@ -328,10 +343,6 @@ atLeast =
 
 maxRocksCount =
     16
-
-
-listCount pred =
-    List.filter pred >> List.length
 
 
 randomBreakLargeRocks rocks =
@@ -460,28 +471,20 @@ withinBounds ( w, h ) ( x, y ) =
 
 stepRock : Float -> Rock -> Rock
 stepRock d rock =
+    let
+        grownRoomSize =
+            vAdd roomSize (rockVisualSize rock)
+    in
     { rock
         | p =
             rock.p
                 |> vAdd (rock.v |> vScale d)
-                |> warpWithMargin (rockWarpMargin rock) roomSize
+                |> warpInDimension grownRoomSize
         , a = rock.a + d * turns 0.1
     }
 
 
-rockWarpMargin rock =
-    rockRadius rock * 1.1
-
-
-warpWithMargin margin size =
-    let
-        sizeWithMargin =
-            map (add (margin * 2)) size
-    in
-    warp sizeWithMargin
-
-
-warp ( w, h ) ( x, y ) =
+warpInDimension ( w, h ) ( x, y ) =
     ( if x < -w / 2 then
         w / 2
 
