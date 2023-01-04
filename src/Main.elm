@@ -68,25 +68,21 @@ placeRockOutSideRoom rock =
         ( _, y ) =
             rock.p
 
+        ( rockWidth, _ ) =
+            rockSize rock
+
         nx =
-            roomInset.left - rockVisualWidth rock
+            roomInset.left - (rockWidth * 1.1)
     in
     { rock | p = ( nx, y ) }
 
 
-rockVisualSize rock =
+rockSize rock =
     let
-        r =
-            rockRadius rock
-
-        d =
-            r * 2.1
+        diameter =
+            rockRadius rock * 2
     in
-    ( d, d )
-
-
-rockVisualWidth =
-    rockVisualSize >> Tuple.first
+    ( diameter, diameter )
 
 
 type RockType
@@ -473,7 +469,7 @@ stepRock : Float -> Rock -> Rock
 stepRock d rock =
     let
         grownRoomSize =
-            vAdd roomSize (rockVisualSize rock)
+            vAdd roomSize (rockSize rock |> vScale 1.1)
     in
     { rock
         | p =
