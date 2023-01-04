@@ -52,6 +52,10 @@ type alias Rock =
     }
 
 
+rockSpeed =
+    10
+
+
 type RockType
     = RockSmall
     | RockLarge
@@ -72,8 +76,11 @@ type Msg
 init : () -> ( Model, Cmd Msg )
 init () =
     let
+        initialSeed =
+            Random.initialSeed 2
+
         ( rocks, seed ) =
-            Random.step (Random.list 4 randomRock) (Random.initialSeed 2)
+            Random.step randomInitialRocks initialSeed
     in
     ( { p = ( 10, -50 )
       , a = turns 0.5
@@ -91,25 +98,38 @@ init () =
     )
 
 
-randomRock : Generator Rock
-randomRock =
+randomInitialRocks : Generator (List Rock)
+randomInitialRocks =
+    Random.list 4 randomInitialLargeRock
+
+
+randomInitialLargeRock : Generator Rock
+randomInitialLargeRock =
     Random.map4 Rock
-        (randomPointInRoom ( 500, 500 ))
+        randomPointInRoom
         randomAngle
         randomRockVelocity
         (Random.constant RockLarge)
 
 
+velocityFromSpeedAndAngle r a =
+    fromPolar ( r, a )
+
+
 randomRockVelocity =
     randomAngle
-        |> Random.map (\a -> fromPolar ( 10, a ))
+        |> Random.map (velocityFromSpeedAndAngle rockSpeed)
 
 
 randomAngle =
     Random.float 0 (turns 1)
 
 
-randomPointInRoom ( w, h ) =
+randomPointInRoom =
+    let
+        ( w, h ) =
+            roomSize
+    in
     Random.pair
         (Random.float (-w / 2) (w / 2))
         (Random.float (-h / 2) (h / 2))
