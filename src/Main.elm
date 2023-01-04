@@ -367,7 +367,7 @@ rockBulletCollision rock bullet =
 
 rockCollisionRadius : Rock -> Float
 rockCollisionRadius rock =
-    rockRadius rock * 0.9
+    rockRadius rock
 
 
 rockRadius : Rock -> Float
@@ -539,7 +539,7 @@ rockLargeSvg =
             rockLargeRadius
 
         pts =
-            Random.step (randomNgonPoints 0.1 25 r)
+            Random.step (randomNgonPoints 0.05 30 r)
                 (Random.initialSeed 0)
                 |> Tuple.first
     in
@@ -548,17 +548,13 @@ rockLargeSvg =
         []
 
 
-
---noinspection ElmUnusedSymbol
-
-
 rockSmallSvg =
     let
         r =
             rockSmallRadius
 
         pts =
-            Random.step (randomNgonPoints 0.1 25 r)
+            Random.step (randomNgonPoints 0.07 30 r)
                 (Random.initialSeed 0)
                 |> Tuple.first
     in
