@@ -545,7 +545,9 @@ view m =
             , S.strokeDasharray "40 1"
             , fill "transparent"
             ]
-            ([ roomRect, viewPA ship m.p m.a ]
+            ([ roomDebugBoundary
+             , viewPA ship m.p m.a
+             ]
                 ++ List.map viewRock m.rocks
                 ++ List.map
                     (\bullet -> viewPA bulletShape bullet.p bullet.a)
@@ -554,7 +556,7 @@ view m =
         ]
 
 
-roomRect =
+roomDebugBoundary =
     let
         ( x, y ) =
             roomHalfSize |> map (negate >> String.fromFloat)
