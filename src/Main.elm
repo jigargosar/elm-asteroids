@@ -5,6 +5,7 @@ import Browser.Events
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Json.Decode as JD
+import List.Extra
 import Random exposing (Generator, Seed)
 import Random.Extra
 import Svg exposing (Svg, svg)
@@ -52,8 +53,25 @@ type alias Rock =
     }
 
 
+isRockSmall : Rock -> Bool
+isRockSmall rock =
+    rock.t == RockSmall
+
+
 rockSpeed =
     30
+
+
+placeRockOutSideRoom : Rock -> Rock
+placeRockOutSideRoom rock =
+    let
+        ( _, y ) =
+            rock.p
+
+        nx =
+            roomInset.left - rockWarpMargin rock
+    in
+    { rock | p = ( nx, y ) }
 
 
 type RockType
@@ -110,6 +128,15 @@ randomInitialLargeRock =
         randomAngle
         randomRockVelocity
         (Random.constant RockLarge)
+
+
+randomNewLargeRock =
+    Random.map4 Rock
+        randomPointInRoom
+        randomAngle
+        randomRockVelocity
+        (Random.constant RockLarge)
+        |> Random.map placeRockOutSideRoom
 
 
 velocityFromSpeedAndAngle r a =
@@ -260,30 +287,11 @@ collision m =
             bulletsRocksCollision (Tuple.second m.bullets) m.rocks
 
         ( shatteredRocks, seed ) =
-            List.concatMap
-                (\rock ->
-                    case rock.t of
-                        RockSmall ->
-                            if List.length rocksSafe < 6 then
-                                [ { rock
-                                    | t = RockLarge
-                                    , p =
-                                        Tuple.mapFirst
-                                            (always (roomInset.left - (rockLargeRadius * 1.1)))
-                                            rock.p
-                                  }
-                                ]
-
-                            else
-                                []
-
-                        RockLarge ->
-                            [ { rock | t = RockSmall }, { rock | t = RockSmall } ]
-                )
-                rocksHit
-                |> List.map randomizeRockVelocity
-                |> Random.Extra.combine
+            randomBreakLargeRocks rocksHit
                 |> randomStepWithSeed m.seed
+
+        smallRocksHitCount =
+            List.Extra.count isRockSmall rocksHit
     in
     { m
         | rocks = rocksSafe ++ shatteredRocks
@@ -291,6 +299,54 @@ collision m =
         , bullets = Tuple.mapSecond (always safeBullets) m.bullets
         , seed = seed
     }
+        |> addNewRocks smallRocksHitCount
+
+
+addNewRocks : Int -> Model -> Model
+addNewRocks amount m =
+    let
+        capacity =
+            (maxRocksCount - List.length m.rocks)
+                |> atLeast 0
+
+        finalAmount =
+            min amount capacity
+
+        ( newRocks, seed ) =
+            Random.step (Random.list finalAmount randomNewLargeRock)
+                m.seed
+    in
+    { m
+        | rocks = m.rocks ++ newRocks
+        , seed = seed
+    }
+
+
+atLeast =
+    max
+
+
+maxRocksCount =
+    16
+
+
+listCount pred =
+    List.filter pred >> List.length
+
+
+randomBreakLargeRocks rocks =
+    List.concatMap
+        (\rock ->
+            case rock.t of
+                RockSmall ->
+                    []
+
+                RockLarge ->
+                    [ { rock | t = RockSmall }, { rock | t = RockSmall } ]
+        )
+        rocks
+        |> List.map randomizeRockVelocity
+        |> Random.Extra.combine
 
 
 randomStepWithSeed seed gen =
@@ -414,11 +470,15 @@ stepRock d rock =
 
 
 rockWarpMargin rock =
-    rockRadius rock * 2.2
+    rockRadius rock * 1.1
 
 
-warpWithMargin m sz p =
-    warp (map (add m) sz) p
+warpWithMargin margin size =
+    let
+        sizeWithMargin =
+            map (add (margin * 2)) size
+    in
+    warp sizeWithMargin
 
 
 warp ( w, h ) ( x, y ) =
