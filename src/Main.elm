@@ -556,13 +556,13 @@ view m =
         ]
 
 
-rect sz attrs =
+rect size attrs =
     let
         ( x, y ) =
-            sz |> map (mul -0.5 >> String.fromFloat)
+            size |> map (mul -0.5 >> String.fromFloat)
 
         ( w, h ) =
-            sz |> map String.fromFloat
+            size |> map String.fromFloat
     in
     Svg.rect (S.x x :: S.y y :: S.width w :: S.height h :: attrs) []
 
