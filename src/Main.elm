@@ -175,7 +175,7 @@ randomPointInRoom =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    [ Browser.Events.onAnimationFrameDelta GotDelta
+    [ Browser.Events.onAnimationFrameDelta (atMost 100 >> GotDelta)
     , Browser.Events.onKeyDown (JD.field "key" JD.string |> JD.map (GotKey True))
     , Browser.Events.onKeyUp (JD.field "key" JD.string |> JD.map (GotKey False))
     ]
@@ -335,6 +335,10 @@ addNewRocks amount m =
 
 atLeast =
     max
+
+
+atMost =
+    min
 
 
 maxRocksCount =
