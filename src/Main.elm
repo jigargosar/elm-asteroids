@@ -645,11 +645,11 @@ shipR =
 
 
 rockLargeRadius =
-    60
+    40
 
 
 rockSmallRadius =
-    30
+    20
 
 
 viewPA el ( x, y ) a =
