@@ -641,7 +641,7 @@ bulletShape =
 
 
 shipR =
-    15
+    10
 
 
 rockLargeRadius =
