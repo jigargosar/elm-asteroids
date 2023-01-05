@@ -41,8 +41,11 @@ type alias Model =
     }
 
 
-type Explosion
-    = Explosion
+type alias Explosion =
+    { elapsed : Float
+    , duration : Float
+    , rock : Rock
+    }
 
 
 type alias Rock =
@@ -242,6 +245,7 @@ step d m =
             in
             m.a + d * angularDirection * turns 0.5
         , rocks = List.map (stepRock d) m.rocks
+        , explosions = List.filterMap (stepExplosion d) m.explosions
         , bullets =
             let
                 ( elapsed, bullets ) =
@@ -306,11 +310,29 @@ collision m =
     in
     { m
         | rocks = rocksSafe ++ shatteredRocks
-        , explosions = [ Explosion ]
+        , explosions = m.explosions ++ explodeRocks rocksHit
         , bullets = Tuple.mapSecond (always safeBullets) m.bullets
         , seed = seed
     }
         |> addNewRocks smallRocksHitCount
+
+
+explodeRocks : List Rock -> List Explosion
+explodeRocks =
+    List.map (\rock -> { elapsed = 0, duration = 0.1, rock = rock })
+
+
+stepExplosion : Float -> Explosion -> Maybe Explosion
+stepExplosion d e =
+    let
+        elapsed =
+            e.elapsed + d
+    in
+    if elapsed > e.duration then
+        Nothing
+
+    else
+        Just { e | elapsed = elapsed }
 
 
 addNewRocks : Int -> Model -> Model
@@ -553,11 +575,33 @@ view m =
              , viewPA ship m.p m.a
              ]
                 ++ List.map viewRock m.rocks
+                ++ List.map viewExplosion m.explosions
                 ++ List.map
                     (\bullet -> viewPA bulletShape bullet.p bullet.a)
                     (Tuple.second m.bullets)
             )
         ]
+
+
+viewExplosion e =
+    let
+        lifetime =
+            e.elapsed / e.duration |> clamp 0 1
+    in
+    Svg.g
+        [ S.opacity (String.fromFloat (0.8 - (lifetime * 0.8)))
+        , [ "scale(", String.fromFloat (1 + (lifetime * 0.3)), ")" ]
+            |> String.join ""
+            |> S.transform
+
+        --, transform
+        --    [ [ "scale(", String.fromFloat (1 + (lifetime * 0.2)), ")" ]
+        --        |> String.join ""
+        --    ]
+        , style "transform-origin" "center"
+        , style "transform-box" "fill-box"
+        ]
+        [ viewRock e.rock ]
 
 
 rect size attrs =
