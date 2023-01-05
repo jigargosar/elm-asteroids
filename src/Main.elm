@@ -319,7 +319,7 @@ collision m =
 
 explodeRocks : List Rock -> List Explosion
 explodeRocks =
-    List.map (\rock -> { elapsed = 0, duration = 0.1, rock = rock })
+    List.map (\rock -> { elapsed = 0, duration = 0.25, rock = rock })
 
 
 stepExplosion : Float -> Explosion -> Maybe Explosion
@@ -587,17 +587,16 @@ viewExplosion e =
     let
         lifetime =
             e.elapsed / e.duration |> clamp 0 1
+
+        fading =
+            0.7 - (lifetime * 0.7)
+
+        scaling =
+            0.9 + (lifetime * 0.4)
     in
     Svg.g
-        [ S.opacity (String.fromFloat (0.8 - (lifetime * 0.8)))
-        , [ "scale(", String.fromFloat (1 + (lifetime * 0.3)), ")" ]
-            |> String.join ""
-            |> S.transform
-
-        --, transform
-        --    [ [ "scale(", String.fromFloat (1 + (lifetime * 0.2)), ")" ]
-        --        |> String.join ""
-        --    ]
+        [ S.opacity (String.fromFloat fading)
+        , transform [ scale scaling ]
         , style "transform-origin" "center"
         , style "transform-box" "fill-box"
         ]
@@ -766,6 +765,11 @@ transformXYA x y a =
 
 transform =
     String.join " " >> style "transform"
+
+
+scale s =
+    [ "scale(", String.fromFloat s, ")" ]
+        |> String.join ""
 
 
 translate x y =
