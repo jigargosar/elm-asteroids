@@ -714,7 +714,7 @@ bulletShape =
     Svg.circle [ S.r "3", fill "white", stroke "none" ] []
 
 
-shipR =
+shipRadius =
     10
 
 
@@ -727,11 +727,7 @@ rockSmallRadius =
 
 
 viewPA el (Vec ( x, y )) a =
-    viewXYA el x y a
-
-
-viewXYA imageEl x y a =
-    Svg.g [ transformXYA x y a ] [ imageEl ]
+    Svg.g [ transformXYA x y a ] [ el ]
 
 
 rockLargeSvg =
@@ -798,7 +794,7 @@ shipSvg : Svg msg
 shipSvg =
     let
         r =
-            shipR
+            shipRadius
 
         head =
             ( r * 1.5, 0 )
