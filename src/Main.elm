@@ -111,11 +111,11 @@ vMapX f (Vec v) =
 
 
 vFromPolar =
-    Basics.fromPolar >> Vec
+    fromPolar >> Vec
 
 
 vToPolar (Vec v) =
-    Basics.toPolar v
+    toPolar v
 
 
 vMapAngle f =
