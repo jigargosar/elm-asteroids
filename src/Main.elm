@@ -169,7 +169,7 @@ type alias Bullet =
 
 
 type Msg
-    = GotDelta Float
+    = GotAnimationFrame Float
     | GotKey Bool String
 
 
@@ -246,7 +246,7 @@ randomPointInRoom =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    [ Browser.Events.onAnimationFrameDelta GotDelta
+    [ Browser.Events.onAnimationFrameDelta GotAnimationFrame
     , Browser.Events.onKeyDown (JD.field "key" JD.string |> JD.map (GotKey True))
     , Browser.Events.onKeyUp (JD.field "key" JD.string |> JD.map (GotKey False))
     ]
@@ -259,7 +259,7 @@ update msg m =
         GotKey isDown key ->
             ( { m | input = inputUpdate isDown key m.input }, Cmd.none )
 
-        GotDelta deltaMilli ->
+        GotAnimationFrame deltaMilli ->
             let
                 deltaSeconds =
                     atMost 100 deltaMilli / 1000
