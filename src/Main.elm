@@ -1,11 +1,13 @@
 module Main exposing (main)
 
+import Angle exposing (Angle)
 import Browser
 import Browser.Events
 import Html exposing (div, text)
 import Html.Attributes exposing (style)
 import Json.Decode as JD
 import List.Extra
+import Quantity
 import Random exposing (Generator, Seed)
 import Random.Extra
 import Svg exposing (Svg, svg)
@@ -102,7 +104,7 @@ inputUpdate isDown key input =
 
 type alias Ship =
     { p : ( Float, Float )
-    , a : Float
+    , a : Angle
     , v : ( Float, Float )
     }
 
@@ -110,7 +112,7 @@ type alias Ship =
 shipInitial : Ship
 shipInitial =
     { p = ( 10, -50 )
-    , a = turns 0.5
+    , a = Angle.turns 0.5
     , v = fromPolar ( 50, turns 0.5 )
     }
 
@@ -125,7 +127,7 @@ shipStep d input m =
         m.v
             |> friction d 0.05
             |> (if input.forward then
-                    vAdd (fromPolar ( d * 100, m.a ))
+                    vAdd (fromPolar ( d * 100, Angle.inRadians m.a ))
 
                 else
                     identity
@@ -141,8 +143,11 @@ shipStep d input m =
 
                 else
                     0
+
+            angularDisplacement =
+                Quantity.multiplyBy (d * angularDirection) (Angle.turns 0.5)
         in
-        m.a + d * angularDirection * turns 0.5
+        Quantity.plus m.a angularDisplacement
     }
 
 
@@ -260,9 +265,13 @@ type alias Bullet =
     }
 
 
-bulletInit : ( Float, Float ) -> Float -> Bullet
+bulletInit : ( Float, Float ) -> Angle -> Bullet
 bulletInit p a =
-    { p = p, a = a, v = fromPolar ( 300, a ) }
+    let
+        angleInRadians =
+            Angle.inRadians a
+    in
+    { p = p, a = angleInRadians, v = fromPolar ( 300, angleInRadians ) }
 
 
 bulletStep : Float -> Bullet -> Maybe Bullet
@@ -338,7 +347,7 @@ step d m =
         |> collision
 
 
-stepBullets : Float -> Input -> ( Float, Float ) -> Float -> ( Float, List Bullet ) -> ( Float, List Bullet )
+stepBullets : Float -> Input -> ( Float, Float ) -> Angle -> ( Float, List Bullet ) -> ( Float, List Bullet )
 stepBullets d input p a ( elapsed, bullets ) =
     let
         updatedBullets =
@@ -623,7 +632,7 @@ view m =
 
 viewShip : Ship -> Svg msg
 viewShip ship =
-    viewPA shipSvg ship.p ship.a
+    viewPA shipSvg ship.p (Angle.inRadians ship.a)
 
 
 viewExplosion e =
