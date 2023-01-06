@@ -72,6 +72,15 @@ type alias Input =
     }
 
 
+inputInitial : Input
+inputInitial =
+    { left = False
+    , right = False
+    , forward = False
+    , trigger = False
+    }
+
+
 inputUpdate : Bool -> String -> Input -> Input
 inputUpdate isDown key input =
     case key of
@@ -278,12 +287,7 @@ init () =
       , rocks = rocks
       , bullets = ( 0, [] )
       , explosions = []
-      , input =
-            { left = False
-            , right = False
-            , forward = False
-            , trigger = False
-            }
+      , input = inputInitial
       , seed = seed
       }
     , Cmd.none
