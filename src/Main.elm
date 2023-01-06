@@ -740,9 +740,7 @@ rockLargeSvg =
                 (Random.initialSeed 0)
                 |> Tuple.first
     in
-    Svg.polygon
-        [ attrPoints pts ]
-        []
+    Svg.polygon [ attrPoints pts ] []
 
 
 rockSmallSvg =
@@ -755,9 +753,7 @@ rockSmallSvg =
                 (Random.initialSeed 0)
                 |> Tuple.first
     in
-    Svg.polygon
-        [ attrPoints pts ]
-        []
+    Svg.polygon [ attrPoints pts ] []
 
 
 randomNgonPoints deviation sides radius =
