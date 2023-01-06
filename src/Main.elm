@@ -168,6 +168,15 @@ type alias Bullet =
     }
 
 
+bulletStep : Float -> Bullet -> Maybe Bullet
+bulletStep d bullet =
+    if withinBounds roomSize bullet.p then
+        Just { bullet | p = bullet.p |> vAdd (bullet.v |> vScale d) }
+
+    else
+        Nothing
+
+
 type Msg
     = GotAnimationFrame Float
     | GotKey Bool String
@@ -278,10 +287,11 @@ step d m =
         |> collision
 
 
+stepBullets : Float -> Input -> Ship -> ( Float, List Bullet ) -> ( Float, List Bullet )
 stepBullets d input ship ( elapsed, bullets ) =
     let
         updatedBullets =
-            List.filterMap (stepBullet d) bullets
+            List.filterMap (bulletStep d) bullets
     in
     if input.trigger && elapsed > 0.5 then
         ( 0
@@ -503,15 +513,6 @@ distanceSquared ( a, b ) ( c, d ) =
 friction d coefficient =
     --https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585
     vScale (e ^ (-d * coefficient))
-
-
-stepBullet : Float -> Bullet -> Maybe Bullet
-stepBullet d bullet =
-    if withinBounds roomSize bullet.p then
-        Just { bullet | p = bullet.p |> vAdd (bullet.v |> vScale d) }
-
-    else
-        Nothing
 
 
 withinBounds ( w, h ) ( x, y ) =
