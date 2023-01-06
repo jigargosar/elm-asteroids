@@ -50,14 +50,10 @@ roomSize =
     Size ( roomWidth, roomHeight )
 
 
-roomHalfSize =
-    sizeHalve roomSize
-
-
 roomInset =
     let
-        (Size ( hw, hh )) =
-            roomHalfSize
+        ( hw, hh ) =
+            sizeScale 0.5 roomSize |> sizeToTuple
     in
     { top = -hh
     , right = hw
@@ -138,8 +134,8 @@ type Size
     = Size ( Float, Float )
 
 
-sizeHalve =
-    sizeScale 0.5
+sizeToTuple (Size sz) =
+    sz
 
 
 sizeGrow (Size a) (Size b) =
@@ -276,28 +272,27 @@ randomAngle =
 
 randomPointInRoom : Generator Vec
 randomPointInRoom =
-    let
-        (Size ( hw, hh )) =
-            roomHalfSize
-    in
     Random.pair
-        (Random.float -hw hw)
-        (Random.float -hh hh)
+        (Random.float roomInset.left roomInset.right)
+        (Random.float roomInset.top roomInset.bottom)
         |> Random.map Vec
 
 
 rockPlaceOutSideRoom : Rock -> Rock
 rockPlaceOutSideRoom rock =
     let
-        (Size ( rockWidth, _ )) =
-            rockSize rock
-
         nx =
-            roomInset.left - (rockWidth * 1.1)
+            roomInset.left - (rockWidth rock * 1.1)
     in
     { rock | p = vMapX (always nx) rock.p }
 
 
+rockWidth : Rock -> Float
+rockWidth rock =
+    sizeToTuple (rockSize rock) |> Tuple.first
+
+
+rockSize : Rock -> Size
 rockSize rock =
     let
         diameter =
@@ -578,7 +573,8 @@ stepRock : Float -> Rock -> Rock
 stepRock d rock =
     let
         grownRoomSize =
-            sizeGrow roomSize (rockSize rock |> sizeScale 1.1)
+            roomSize
+                |> sizeGrow (rockSize rock)
     in
     { rock
         | p =
@@ -589,6 +585,7 @@ stepRock d rock =
     }
 
 
+warpInDimension : Size -> Vec -> Vec
 warpInDimension (Size ( w, h )) (Vec ( x, y )) =
     Vec
         ( if x < -w / 2 then
