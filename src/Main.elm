@@ -273,25 +273,25 @@ step d m =
         | ship = shipStep d m.input m.ship
         , rocks = List.map (stepRock d) m.rocks
         , explosions = List.filterMap (stepExplosion d) m.explosions
-        , bullets =
-            let
-                ( elapsed, bullets ) =
-                    m.bullets
-
-                updatedBullets =
-                    List.filterMap (stepBullet d) bullets
-            in
-            if m.input.trigger && elapsed > 0.5 then
-                ( 0
-                , { p = m.ship.p, a = m.ship.a, v = fromPolar ( 300, m.ship.a ) } :: updatedBullets
-                )
-
-            else
-                ( elapsed + d
-                , updatedBullets
-                )
+        , bullets = stepBullets d m.input m.ship m.bullets
     }
         |> collision
+
+
+stepBullets d input ship ( elapsed, bullets ) =
+    let
+        updatedBullets =
+            List.filterMap (stepBullet d) bullets
+    in
+    if input.trigger && elapsed > 0.5 then
+        ( 0
+        , { p = ship.p, a = ship.a, v = fromPolar ( 300, ship.a ) } :: updatedBullets
+        )
+
+    else
+        ( elapsed + d
+        , updatedBullets
+        )
 
 
 roomWidth =
