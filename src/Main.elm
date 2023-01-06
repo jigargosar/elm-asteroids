@@ -27,17 +27,66 @@ type alias Flags =
 
 
 type alias Model =
-    { p : ( Float, Float )
-    , a : Float
-    , v : ( Float, Float )
+    { ship : Ship
     , rocks : List Rock
     , bullets : ( Float, List Bullet )
     , explosions : List Explosion
-    , left : Bool
+    , input : Input
+    , seed : Seed
+    }
+
+
+type alias Input =
+    { left : Bool
     , right : Bool
     , forward : Bool
     , trigger : Bool
-    , seed : Seed
+    }
+
+
+type alias Ship =
+    { p : ( Float, Float )
+    , a : Float
+    , v : ( Float, Float )
+    }
+
+
+shipInitial : Ship
+shipInitial =
+    { p = ( 10, -50 )
+    , a = turns 0.5
+    , v = fromPolar ( 50, turns 0.5 )
+    }
+
+
+shipStep : Float -> Input -> Ship -> Ship
+shipStep d input m =
+    { p =
+        m.p
+            |> vAdd (m.v |> vScale d)
+            |> warpInDimension roomSize
+    , v =
+        m.v
+            |> friction d 0.05
+            |> (if input.forward then
+                    vAdd (fromPolar ( d * 100, m.a ))
+
+                else
+                    identity
+               )
+    , a =
+        let
+            angularDirection =
+                if input.left && not input.right then
+                    -1
+
+                else if not input.left && input.right then
+                    1
+
+                else
+                    0
+        in
+        m.a + d * angularDirection * turns 0.5
     }
 
 
@@ -56,8 +105,13 @@ type alias Rock =
     }
 
 
-isRockSmall : Rock -> Bool
-isRockSmall rock =
+type RockType
+    = RockSmall
+    | RockLarge
+
+
+rockIsSmall : Rock -> Bool
+rockIsSmall rock =
     rock.t == RockSmall
 
 
@@ -65,8 +119,8 @@ rockSpeed =
     30
 
 
-placeRockOutSideRoom : Rock -> Rock
-placeRockOutSideRoom rock =
+rockPlaceOutSideRoom : Rock -> Rock
+rockPlaceOutSideRoom rock =
     let
         ( _, y ) =
             rock.p
@@ -86,11 +140,6 @@ rockSize rock =
             rockRadius rock * 2
     in
     ( diameter, diameter )
-
-
-type RockType
-    = RockSmall
-    | RockLarge
 
 
 type alias Bullet =
@@ -114,16 +163,16 @@ init () =
         ( rocks, seed ) =
             Random.step randomInitialRocks initialSeed
     in
-    ( { p = ( 10, -50 )
-      , a = turns 0.5
-      , v = fromPolar ( 50, turns 0.5 )
+    ( { ship = shipInitial
       , rocks = rocks
       , bullets = ( 0, [] )
       , explosions = []
-      , left = False
-      , right = False
-      , forward = False
-      , trigger = False
+      , input =
+            { left = False
+            , right = False
+            , forward = False
+            , trigger = False
+            }
       , seed = seed
       }
     , Cmd.none
@@ -150,7 +199,7 @@ randomNewLargeRock =
         randomAngle
         randomRockVelocity
         (Random.constant RockLarge)
-        |> Random.map placeRockOutSideRoom
+        |> Random.map rockPlaceOutSideRoom
 
 
 velocityFromSpeedAndAngle r a =
@@ -188,20 +237,26 @@ subscriptions _ =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg m =
     case msg of
-        GotKey isDown "ArrowLeft" ->
-            ( { m | left = isDown }, Cmd.none )
+        GotKey isDown key ->
+            let
+                input =
+                    m.input
 
-        GotKey isDown "ArrowRight" ->
-            ( { m | right = isDown }, Cmd.none )
+                newInput =
+                    case key of
+                        "ArrowLeft" ->
+                            { input | left = isDown }
 
-        GotKey isDown "ArrowUp" ->
-            ( { m | forward = isDown }, Cmd.none )
+                        "ArrowRight" ->
+                            { input | right = isDown }
 
-        GotKey isDown " " ->
-            ( { m | trigger = isDown }, Cmd.none )
+                        "ArrowUp" ->
+                            { input | forward = isDown }
 
-        GotKey _ _ ->
-            ( m, Cmd.none )
+                        " " ->
+                            { input | trigger = isDown }
+            in
+            ( { m | input = newInput }, Cmd.none )
 
         GotDelta dm ->
             let
@@ -218,32 +273,7 @@ exp n =
 step : Float -> Model -> Model
 step d m =
     { m
-        | p =
-            m.p
-                |> vAdd (m.v |> vScale d)
-                |> warpInDimension roomSize
-        , v =
-            m.v
-                |> friction d 0.05
-                |> (if m.forward then
-                        vAdd (fromPolar ( d * 100, m.a ))
-
-                    else
-                        identity
-                   )
-        , a =
-            let
-                angularDirection =
-                    if m.left && not m.right then
-                        -1
-
-                    else if not m.left && m.right then
-                        1
-
-                    else
-                        0
-            in
-            m.a + d * angularDirection * turns 0.5
+        | ship = shipStep d m.input m.ship
         , rocks = List.map (stepRock d) m.rocks
         , explosions = List.filterMap (stepExplosion d) m.explosions
         , bullets =
@@ -254,9 +284,9 @@ step d m =
                 updatedBullets =
                     List.filterMap (stepBullet d) bullets
             in
-            if m.trigger && elapsed > 0.5 then
+            if m.input.trigger && elapsed > 0.5 then
                 ( 0
-                , { p = m.p, a = m.a, v = fromPolar ( 300, m.a ) } :: updatedBullets
+                , { p = m.ship.p, a = m.ship.a, v = fromPolar ( 300, m.ship.a ) } :: updatedBullets
                 )
 
             else
@@ -306,7 +336,7 @@ collision m =
                 |> randomStepWithSeed m.seed
 
         smallRocksHitCount =
-            List.Extra.count isRockSmall rocksHit
+            List.Extra.count rockIsSmall rocksHit
     in
     { m
         | rocks = rocksSafe ++ shatteredRocks
@@ -572,7 +602,7 @@ view m =
             , fill "transparent"
             ]
             ([ rect roomSize []
-             , viewPA ship m.p m.a
+             , viewShip m.ship
              ]
                 ++ List.map viewRock m.rocks
                 ++ List.map viewExplosion m.explosions
@@ -581,6 +611,11 @@ view m =
                     (Tuple.second m.bullets)
             )
         ]
+
+
+viewShip : Ship -> Svg msg
+viewShip ship =
+    viewPA shipSvg ship.p ship.a
 
 
 viewExplosion e =
@@ -720,8 +755,8 @@ fromAngleRadius a r =
     fromPolar ( r, a )
 
 
-ship : Svg msg
-ship =
+shipSvg : Svg msg
+shipSvg =
     let
         r =
             shipR
