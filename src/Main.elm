@@ -260,6 +260,11 @@ type alias Bullet =
     }
 
 
+bulletInit : ( Float, Float ) -> Float -> Bullet
+bulletInit p a =
+    { p = p, a = a, v = fromPolar ( 300, a ) }
+
+
 bulletStep : Float -> Bullet -> Maybe Bullet
 bulletStep d bullet =
     if withinBounds roomSize bullet.p then
@@ -328,20 +333,20 @@ step d m =
         | ship = shipStep d m.input m.ship
         , rocks = List.map (stepRock d) m.rocks
         , explosions = List.filterMap (explosionStep d) m.explosions
-        , bullets = stepBullets d m.input m.ship m.bullets
+        , bullets = stepBullets d m.input m.ship.p m.ship.a m.bullets
     }
         |> collision
 
 
-stepBullets : Float -> Input -> Ship -> ( Float, List Bullet ) -> ( Float, List Bullet )
-stepBullets d input ship ( elapsed, bullets ) =
+stepBullets : Float -> Input -> ( Float, Float ) -> Float -> ( Float, List Bullet ) -> ( Float, List Bullet )
+stepBullets d input p a ( elapsed, bullets ) =
     let
         updatedBullets =
             List.filterMap (bulletStep d) bullets
     in
     if input.trigger && elapsed > 0.5 then
         ( 0
-        , { p = ship.p, a = ship.a, v = fromPolar ( 300, ship.a ) } :: updatedBullets
+        , bulletInit p a :: updatedBullets
         )
 
     else
