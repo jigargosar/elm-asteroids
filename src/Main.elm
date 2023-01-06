@@ -246,7 +246,7 @@ randomPointInRoom =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    [ Browser.Events.onAnimationFrameDelta (atMost 100 >> GotDelta)
+    [ Browser.Events.onAnimationFrameDelta GotDelta
     , Browser.Events.onKeyDown (JD.field "key" JD.string |> JD.map (GotKey True))
     , Browser.Events.onKeyUp (JD.field "key" JD.string |> JD.map (GotKey False))
     ]
@@ -259,16 +259,12 @@ update msg m =
         GotKey isDown key ->
             ( { m | input = inputUpdate isDown key m.input }, Cmd.none )
 
-        GotDelta dm ->
+        GotDelta deltaMilli ->
             let
-                d =
-                    dm / 1000
+                deltaSeconds =
+                    atMost 100 deltaMilli / 1000
             in
-            ( step d m, Cmd.none )
-
-
-exp n =
-    e ^ n
+            ( step deltaSeconds m, Cmd.none )
 
 
 step : Float -> Model -> Model
@@ -506,7 +502,7 @@ distanceSquared ( a, b ) ( c, d ) =
 
 friction d coefficient =
     --https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585
-    vScale (exp (-d * coefficient))
+    vScale (e ^ (-d * coefficient))
 
 
 stepBullet : Float -> Bullet -> Maybe Bullet
