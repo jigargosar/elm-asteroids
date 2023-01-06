@@ -47,16 +47,16 @@ roomHeight =
 
 
 roomSize =
-    ( roomWidth, roomHeight )
+    Size ( roomWidth, roomHeight )
 
 
 roomHalfSize =
-    map (mul 0.5) roomSize
+    sizeHalve roomSize
 
 
 roomInset =
     let
-        ( hw, hh ) =
+        (Size ( hw, hh )) =
             roomHalfSize
     in
     { top = -hh
@@ -102,18 +102,58 @@ inputUpdate isDown key input =
             input
 
 
+type Vec
+    = Vec ( Float, Float )
+
+
+vMapX f (Vec v) =
+    Vec (Tuple.mapFirst f v)
+
+
+vFromPolar =
+    Basics.fromPolar >> Vec
+
+
+vToPolar (Vec v) =
+    Basics.toPolar v
+
+
+vMapAngle f =
+    vToPolar >> Tuple.mapSecond f >> vFromPolar
+
+
+vDistanceSquared (Vec ( a, b )) (Vec ( c, d )) =
+    ((a - c) ^ 2) + ((b - d) ^ 2)
+
+
+type Size
+    = Size ( Float, Float )
+
+
+sizeHalve =
+    sizeScale 0.5
+
+
+sizeGrow (Size a) (Size b) =
+    Size (map2 add a b)
+
+
+sizeScale s (Size sz) =
+    Size (map (mul s) sz)
+
+
 type alias Ship =
-    { p : ( Float, Float )
+    { p : Vec
     , a : Angle
-    , v : ( Float, Float )
+    , v : Vec
     }
 
 
 shipInitial : Ship
 shipInitial =
-    { p = ( 10, -50 )
+    { p = Vec ( 10, -50 )
     , a = Angle.turns 0.5
-    , v = fromPolar ( 50, turns 0.5 )
+    , v = vFromPolar ( 50, turns 0.5 )
     }
 
 
@@ -127,7 +167,7 @@ shipStep d input m =
         m.v
             |> friction d 0.05
             |> (if input.forward then
-                    vAdd (fromPolar ( d * 100, Angle.inRadians m.a ))
+                    vAdd (vFromPolar ( d * 100, Angle.inRadians m.a ))
 
                 else
                     identity
@@ -172,9 +212,9 @@ explosionStep d e =
 
 
 type alias Rock =
-    { p : ( Float, Float )
+    { p : Vec
     , a : Float
-    , v : ( Float, Float )
+    , v : Vec
     , t : RockType
     }
 
@@ -218,36 +258,35 @@ rockIsSmall rock =
 
 
 velocityFromSpeedAndAngle r a =
-    fromPolar ( r, a )
+    vFromPolar ( r, a )
 
 
 randomAngle =
     Random.float 0 (turns 1)
 
 
+randomPointInRoom : Generator Vec
 randomPointInRoom =
     let
-        ( w, h ) =
-            roomSize
+        (Size ( hw, hh )) =
+            roomHalfSize
     in
     Random.pair
-        (Random.float (-w / 2) (w / 2))
-        (Random.float (-h / 2) (h / 2))
+        (Random.float -hw hw)
+        (Random.float -hh hh)
+        |> Random.map Vec
 
 
 rockPlaceOutSideRoom : Rock -> Rock
 rockPlaceOutSideRoom rock =
     let
-        ( _, y ) =
-            rock.p
-
-        ( rockWidth, _ ) =
+        (Size ( rockWidth, _ )) =
             rockSize rock
 
         nx =
             roomInset.left - (rockWidth * 1.1)
     in
-    { rock | p = ( nx, y ) }
+    { rock | p = vMapX (always nx) rock.p }
 
 
 rockSize rock =
@@ -255,23 +294,23 @@ rockSize rock =
         diameter =
             rockRadius rock * 2
     in
-    ( diameter, diameter )
+    Size ( diameter, diameter )
 
 
 type alias Bullet =
-    { p : ( Float, Float )
+    { p : Vec
     , a : Float
-    , v : ( Float, Float )
+    , v : Vec
     }
 
 
-bulletInit : ( Float, Float ) -> Angle -> Bullet
+bulletInit : Vec -> Angle -> Bullet
 bulletInit p a =
     let
         angleInRadians =
             Angle.inRadians a
     in
-    { p = p, a = angleInRadians, v = fromPolar ( 300, angleInRadians ) }
+    { p = p, a = angleInRadians, v = vFromPolar ( 300, angleInRadians ) }
 
 
 bulletStep : Float -> Bullet -> Maybe Bullet
@@ -347,7 +386,7 @@ step d m =
         |> collision
 
 
-stepBullets : Float -> Input -> ( Float, Float ) -> Angle -> ( Float, List Bullet ) -> ( Float, List Bullet )
+stepBullets : Float -> Input -> Vec -> Angle -> ( Float, List Bullet ) -> ( Float, List Bullet )
 stepBullets d input p a ( elapsed, bullets ) =
     let
         updatedBullets =
@@ -448,10 +487,6 @@ randomizeRockVelocity rock =
         |> Random.map (\a -> { rock | v = vMapAngle (always a) rock.v })
 
 
-vMapAngle f =
-    toPolar >> Tuple.mapSecond f >> fromPolar
-
-
 bulletsRocksCollision : List Bullet -> List Rock -> ( List Bullet, ( List Rock, List Rock ) )
 bulletsRocksCollision initialBullets initialRocks =
     List.foldl
@@ -507,7 +542,7 @@ qToList (Q list) =
 
 rockBulletCollision : Rock -> Bullet -> Bool
 rockBulletCollision rock bullet =
-    distanceSquared rock.p bullet.p < (rockCollisionRadius rock ^ 2)
+    vDistanceSquared rock.p bullet.p < (rockCollisionRadius rock ^ 2)
 
 
 rockCollisionRadius : Rock -> Float
@@ -525,16 +560,12 @@ rockRadius rock =
             rockLargeRadius
 
 
-distanceSquared ( a, b ) ( c, d ) =
-    ((a - c) ^ 2) + ((b - d) ^ 2)
-
-
 friction d coefficient =
     --https://gamedev.net/forums/topic/382585-friction-and-frame-independant-motion/382585
     vScale (e ^ (-d * coefficient))
 
 
-withinBounds ( w, h ) ( x, y ) =
+withinBounds (Size ( w, h )) (Vec ( x, y )) =
     x > -w / 2 && x < w / 2 && y > -h / 2 && y < h / 2
 
 
@@ -542,7 +573,7 @@ stepRock : Float -> Rock -> Rock
 stepRock d rock =
     let
         grownRoomSize =
-            vAdd roomSize (rockSize rock |> vScale 1.1)
+            sizeGrow roomSize (rockSize rock |> sizeScale 1.1)
     in
     { rock
         | p =
@@ -553,32 +584,33 @@ stepRock d rock =
     }
 
 
-warpInDimension ( w, h ) ( x, y ) =
-    ( if x < -w / 2 then
-        w / 2
+warpInDimension (Size ( w, h )) (Vec ( x, y )) =
+    Vec
+        ( if x < -w / 2 then
+            w / 2
 
-      else if x > w / 2 then
-        -w / 2
+          else if x > w / 2 then
+            -w / 2
 
-      else
-        x
-    , if y < -h / 2 then
-        h / 2
+          else
+            x
+        , if y < -h / 2 then
+            h / 2
 
-      else if y > h / 2 then
-        -h / 2
+          else if y > h / 2 then
+            -h / 2
 
-      else
-        y
-    )
-
-
-vAdd v p =
-    map2 add p v
+          else
+            y
+        )
 
 
-vScale n =
-    map (mul n)
+vAdd (Vec v) (Vec p) =
+    Vec (map2 add p v)
+
+
+vScale n (Vec v) =
+    Vec (map (mul n) v)
 
 
 add =
@@ -607,7 +639,7 @@ view m =
         ]
         [ globalStyles
         , svg
-            [ attrViewBox (roomSize |> vScale 1)
+            [ attrViewBox (roomSize |> sizeScale 1)
             , style "display" "block"
             , style "background-color" "black"
             , style "max-width" "100%"
@@ -655,7 +687,7 @@ viewExplosion e =
         [ viewRock e.rock ]
 
 
-rect size attrs =
+rect (Size size) attrs =
     let
         ( x, y ) =
             size |> map (mul -0.5 >> String.fromFloat)
@@ -666,11 +698,7 @@ rect size attrs =
     Svg.rect (S.x x :: S.y y :: S.width w :: S.height h :: attrs) []
 
 
-attrViewBox size =
-    let
-        ( w, h ) =
-            size
-    in
+attrViewBox (Size ( w, h )) =
     viewBox (String.join " " (List.map String.fromFloat [ -w / 2, -h / 2, w, h ]))
 
 
@@ -704,7 +732,7 @@ rockSmallRadius =
     20
 
 
-viewPA el ( x, y ) a =
+viewPA el (Vec ( x, y )) a =
     viewXYA el x y a
 
 
