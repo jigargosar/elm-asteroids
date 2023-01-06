@@ -44,6 +44,25 @@ type alias Input =
     }
 
 
+inputUpdate : Bool -> String -> Input -> Input
+inputUpdate isDown key input =
+    case key of
+        "ArrowLeft" ->
+            { input | left = isDown }
+
+        "ArrowRight" ->
+            { input | right = isDown }
+
+        "ArrowUp" ->
+            { input | forward = isDown }
+
+        " " ->
+            { input | trigger = isDown }
+
+        _ ->
+            input
+
+
 type alias Ship =
     { p : ( Float, Float )
     , a : Float
@@ -238,25 +257,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg m =
     case msg of
         GotKey isDown key ->
-            let
-                input =
-                    m.input
-
-                newInput =
-                    case key of
-                        "ArrowLeft" ->
-                            { input | left = isDown }
-
-                        "ArrowRight" ->
-                            { input | right = isDown }
-
-                        "ArrowUp" ->
-                            { input | forward = isDown }
-
-                        " " ->
-                            { input | trigger = isDown }
-            in
-            ( { m | input = newInput }, Cmd.none )
+            ( { m | input = inputUpdate isDown key m.input }, Cmd.none )
 
         GotDelta dm ->
             let
