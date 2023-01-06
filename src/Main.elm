@@ -36,6 +36,34 @@ type alias Model =
     }
 
 
+roomWidth =
+    500
+
+
+roomHeight =
+    500
+
+
+roomSize =
+    ( roomWidth, roomHeight )
+
+
+roomHalfSize =
+    map (mul 0.5) roomSize
+
+
+roomInset =
+    let
+        ( hw, hh ) =
+            roomHalfSize
+    in
+    { top = -hh
+    , right = hw
+    , bottom = hh
+    , left = -hw
+    }
+
+
 type alias Input =
     { left : Bool
     , right : Bool
@@ -116,6 +144,19 @@ type alias Explosion =
     }
 
 
+explosionStep : Float -> Explosion -> Maybe Explosion
+explosionStep d e =
+    let
+        elapsed =
+            e.elapsed + d
+    in
+    if elapsed > e.duration then
+        Nothing
+
+    else
+        Just { e | elapsed = elapsed }
+
+
 type alias Rock =
     { p : ( Float, Float )
     , a : Float
@@ -129,13 +170,55 @@ type RockType
     | RockLarge
 
 
+rockRandomInitialLarge : Generator Rock
+rockRandomInitialLarge =
+    Random.map4 Rock
+        randomPointInRoom
+        randomAngle
+        rockRandomVelocity
+        (Random.constant RockLarge)
+
+
+rockRandomNewLarge : Generator Rock
+rockRandomNewLarge =
+    Random.map4 Rock
+        randomPointInRoom
+        randomAngle
+        rockRandomVelocity
+        (Random.constant RockLarge)
+        |> Random.map rockPlaceOutSideRoom
+
+
+rockSpeed =
+    30
+
+
+rockRandomVelocity =
+    randomAngle
+        |> Random.map (velocityFromSpeedAndAngle rockSpeed)
+
+
 rockIsSmall : Rock -> Bool
 rockIsSmall rock =
     rock.t == RockSmall
 
 
-rockSpeed =
-    30
+velocityFromSpeedAndAngle r a =
+    fromPolar ( r, a )
+
+
+randomAngle =
+    Random.float 0 (turns 1)
+
+
+randomPointInRoom =
+    let
+        ( w, h ) =
+            roomSize
+    in
+    Random.pair
+        (Random.float (-w / 2) (w / 2))
+        (Random.float (-h / 2) (h / 2))
 
 
 rockPlaceOutSideRoom : Rock -> Rock
@@ -209,48 +292,7 @@ init () =
 
 randomInitialRocks : Generator (List Rock)
 randomInitialRocks =
-    Random.list 4 randomInitialLargeRock
-
-
-randomInitialLargeRock : Generator Rock
-randomInitialLargeRock =
-    Random.map4 Rock
-        randomPointInRoom
-        randomAngle
-        randomRockVelocity
-        (Random.constant RockLarge)
-
-
-randomNewLargeRock =
-    Random.map4 Rock
-        randomPointInRoom
-        randomAngle
-        randomRockVelocity
-        (Random.constant RockLarge)
-        |> Random.map rockPlaceOutSideRoom
-
-
-velocityFromSpeedAndAngle r a =
-    fromPolar ( r, a )
-
-
-randomRockVelocity =
-    randomAngle
-        |> Random.map (velocityFromSpeedAndAngle rockSpeed)
-
-
-randomAngle =
-    Random.float 0 (turns 1)
-
-
-randomPointInRoom =
-    let
-        ( w, h ) =
-            roomSize
-    in
-    Random.pair
-        (Random.float (-w / 2) (w / 2))
-        (Random.float (-h / 2) (h / 2))
+    Random.list 4 rockRandomInitialLarge
 
 
 subscriptions : Model -> Sub Msg
@@ -281,7 +323,7 @@ step d m =
     { m
         | ship = shipStep d m.input m.ship
         , rocks = List.map (stepRock d) m.rocks
-        , explosions = List.filterMap (stepExplosion d) m.explosions
+        , explosions = List.filterMap (explosionStep d) m.explosions
         , bullets = stepBullets d m.input m.ship m.bullets
     }
         |> collision
@@ -302,34 +344,6 @@ stepBullets d input ship ( elapsed, bullets ) =
         ( elapsed + d
         , updatedBullets
         )
-
-
-roomWidth =
-    500
-
-
-roomHeight =
-    500
-
-
-roomSize =
-    ( roomWidth, roomHeight )
-
-
-roomHalfSize =
-    map (mul 0.5) roomSize
-
-
-roomInset =
-    let
-        ( hw, hh ) =
-            roomHalfSize
-    in
-    { top = -hh
-    , right = hw
-    , bottom = hh
-    , left = -hw
-    }
 
 
 collision : Model -> Model
@@ -359,19 +373,6 @@ explodeRocks =
     List.map (\rock -> { elapsed = 0, duration = 0.25, rock = rock })
 
 
-stepExplosion : Float -> Explosion -> Maybe Explosion
-stepExplosion d e =
-    let
-        elapsed =
-            e.elapsed + d
-    in
-    if elapsed > e.duration then
-        Nothing
-
-    else
-        Just { e | elapsed = elapsed }
-
-
 addNewRocks : Int -> Model -> Model
 addNewRocks amount m =
     let
@@ -383,7 +384,7 @@ addNewRocks amount m =
             min amount capacity
 
         ( newRocks, seed ) =
-            Random.step (Random.list finalAmount randomNewLargeRock)
+            Random.step (Random.list finalAmount rockRandomNewLarge)
                 m.seed
     in
     { m
