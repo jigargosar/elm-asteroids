@@ -106,12 +106,20 @@ type Vec
     = Vec ( Float, Float )
 
 
+vAdd (Vec v) (Vec p) =
+    Vec (map2 add p v)
+
+
+vScale n (Vec v) =
+    Vec (map (mul n) v)
+
+
 vMapX f (Vec v) =
     Vec (Tuple.mapFirst f v)
 
 
-vFromPolar =
-    fromPolar >> Vec
+vFromPolar ( r, a ) =
+    Vec (fromPolar ( r, Angle.inRadians a ))
 
 
 vToPolar (Vec v) =
@@ -153,7 +161,7 @@ shipInitial : Ship
 shipInitial =
     { p = Vec ( 10, -50 )
     , a = Angle.turns 0.5
-    , v = vFromPolar ( 50, turns 0.5 )
+    , v = vFromPolar ( 50, Angle.turns 0.5 )
     }
 
 
@@ -167,7 +175,7 @@ shipStep d input m =
         m.v
             |> friction d 0.05
             |> (if input.forward then
-                    vAdd (vFromPolar ( d * 100, Angle.inRadians m.a ))
+                    vAdd (vFromPolar ( d * 100, m.a ))
 
                 else
                     identity
@@ -213,7 +221,7 @@ explosionStep d e =
 
 type alias Rock =
     { p : Vec
-    , a : Float
+    , a : Angle
     , v : Vec
     , t : RockType
     }
@@ -263,6 +271,7 @@ velocityFromSpeedAndAngle r a =
 
 randomAngle =
     Random.float 0 (turns 1)
+        |> Random.map Angle.radians
 
 
 randomPointInRoom : Generator Vec
@@ -299,18 +308,14 @@ rockSize rock =
 
 type alias Bullet =
     { p : Vec
-    , a : Float
+    , a : Angle
     , v : Vec
     }
 
 
 bulletInit : Vec -> Angle -> Bullet
 bulletInit p a =
-    let
-        angleInRadians =
-            Angle.inRadians a
-    in
-    { p = p, a = angleInRadians, v = vFromPolar ( 300, angleInRadians ) }
+    { p = p, a = a, v = vFromPolar ( 300, a ) }
 
 
 bulletStep : Float -> Bullet -> Maybe Bullet
@@ -580,7 +585,7 @@ stepRock d rock =
             rock.p
                 |> vAdd (rock.v |> vScale d)
                 |> warpInDimension grownRoomSize
-        , a = rock.a + d * turns 0.1
+        , a = Quantity.plus rock.a (Angle.radians (d * turns 0.1))
     }
 
 
@@ -603,14 +608,6 @@ warpInDimension (Size ( w, h )) (Vec ( x, y )) =
           else
             y
         )
-
-
-vAdd (Vec v) (Vec p) =
-    Vec (map2 add p v)
-
-
-vScale n (Vec v) =
-    Vec (map (mul n) v)
 
 
 add =
@@ -664,7 +661,7 @@ view m =
 
 viewShip : Ship -> Svg msg
 viewShip ship =
-    viewPA shipSvg ship.p (Angle.inRadians ship.a)
+    viewPA shipSvg ship.p ship.a
 
 
 viewExplosion e =
@@ -857,7 +854,7 @@ translate x y =
 
 
 rotate a =
-    "rotate(" ++ String.fromFloat a ++ "rad)"
+    "rotate(" ++ String.fromFloat (Angle.inRadians a) ++ "rad)"
 
 
 globalStyles =
